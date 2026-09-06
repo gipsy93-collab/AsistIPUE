@@ -725,13 +725,23 @@ def report_culto_print():
         for k, m in db.get('metricas_cultos', {}).items():
             if k.startswith(fecha) and m.get('ujier'):
                 ujieres_set.add(m.get('ujier'))
-        ujier = ', '.join(sorted(ujieres_set)) or ''
+        valid_ujieres = set(db.get('ujieres', []))
+        # Tomar solo ujieres que existan en la lista oficial de ujieres registrados
+        ujieres_oficiales = [u for u in ujieres_set if u in valid_ujieres]
+        if not ujieres_oficiales:
+            ujieres_oficiales = [u for u in ujieres_set if u and not u.strip().lower().startswith('prueba')]
+        ujieres_list = sorted(ujieres_oficiales)
+        ujier = ', '.join(ujieres_list) or ''
     else:
         asist_filtradas = [a for a in asistencias if a.get('fecha') == fecha and a.get('culto') == culto]
         culto_nombre = culto
         metric = db.get('metricas_cultos', {}).get(f"{fecha}_{culto}", {})
         online = metric.get('transmision_online', 0)
-        ujier = metric.get('ujier') or (asist_filtradas[0].get('ujier') if asist_filtradas else '')
+        u = (metric.get('ujier') or (asist_filtradas[0].get('ujier') if asist_filtradas else '')).strip()
+        if u.lower().startswith('prueba'):
+            u = ''
+        ujier = u
+        ujieres_list = [u] if u else []
         
     hermanos = sum(1 for a in asist_filtradas if is_hermano(a.get('categoria')))
     ninos = sum(1 for a in asist_filtradas if a.get('categoria') == 'Niño' or a.get('genero') == 'Niño')
@@ -747,6 +757,7 @@ def report_culto_print():
         fecha_larga=fecha_larga,
         culto=culto_nombre,
         ujier=ujier or 'Ujier en Turno',
+        ujieres_list=ujieres_list,
         hermanos=hermanos,
         ninos=ninos,
         amigos=amigos,

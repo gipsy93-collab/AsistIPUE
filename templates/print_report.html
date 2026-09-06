@@ -282,7 +282,7 @@
             <div class="logo-box">
                 <img src="/api/logo" alt="IPUE Granada">
                 <div>
-                    <div class="church-title">Iglesia Pentecostal Unida de España</div>
+                    <div class="church-title">Iglesia Pentecostal Unida de Europa</div>
                     <div class="church-sub">Sede Granada · Informe Oficial de Asistencia</div>
                 </div>
             </div>
@@ -389,11 +389,21 @@
 
         <!-- SECCIÓN OFICIAL DE FIRMA: EXCLUSIVAMENTE DEL UJIER EN TURNO -->
         <div class="signature-section">
-            <div class="signature-box">
-                <div class="sig-line"></div>
-                <div class="sig-name">{{ ujier or 'Ujier en Turno' }}</div>
-                <div class="sig-role">Firma del Ujier Responsable</div>
-            </div>
+            {% if ujieres_list and ujieres_list|length > 0 %}
+                {% for u in ujieres_list %}
+                <div class="signature-box">
+                    <div class="sig-line"></div>
+                    <div class="sig-name">{{ u }}</div>
+                    <div class="sig-role">Firma del Ujier Responsable</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="signature-box">
+                    <div class="sig-line"></div>
+                    <div class="sig-name">{{ ujier or 'Ujier en Turno' }}</div>
+                    <div class="sig-role">Firma del Ujier Responsable</div>
+                </div>
+            {% endif %}
         </div>
     </div>
 
