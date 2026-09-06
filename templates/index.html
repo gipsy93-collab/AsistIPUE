@@ -165,33 +165,16 @@
                 <span>+</span> Registrar Nuevo
             </button>
 
-            <!-- BOTÓN DESTACADO PARA APARTADO DE MODIFICACIONES -->
-            <button type="button" class="btn-manage-open" onclick="openGlobalManageModal()">
-                <span>✏️</span> Apartado de Modificaciones / Desagregar Asistente
-            </button>
-
             <div class="search-hint">
                 <span>Tolera faltas de ortografía y apodos comunes</span>
                 <span id="resultsCount"></span>
             </div>
 
-            <div class="results-scroll" id="resultsList">
-                <div class="empty-state">
-                    Escribe al menos 2 letras para buscar un hermano, amigo, visita o niño.
-                </div>
-            </div>
+            <div class="results-scroll" id="resultsList"></div>
         </div>
 
-        <!-- COLUMNA DERECHA: FICHA, ALERTA Y MARCADO -->
-        <div class="card detail-card">
-            <div id="detailEmpty" class="empty-state">
-                <p style="font-size: 16px; margin-bottom: 8px;">👈 Selecciona a un asistente de la lista</p>
-                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Podrás marcar asistencia, cambiar categoría o desagregar.</p>
-                <button type="button" class="btn-manage-open" onclick="openGlobalManageModal()" style="max-width: 340px; margin: 0 auto; background: #eff6ff; border-color: #93c5fd; color: #1d4ed8;">
-                    <span>✏️</span> Abrir Apartado de Modificaciones
-                </button>
-            </div>
-
+        <!-- COLUMNA DERECHA: FICHA, ALERTA Y MARCADO (VISIBLE AL SELECCIONAR ASISTENTE) -->
+        <div class="card detail-card" id="detailCard">
             <div id="detailContent" style="display: none; height: 100%; flex-direction: column;">
                 <div class="person-header">
                     <div class="avatar-badge-row">
@@ -202,9 +185,14 @@
                             <span class="category-tag tag-inactivo" id="detInactiveBadge" style="display:none;margin-left:6px;">DESAGREGADO</span>
                         </div>
                     </div>
-                    <button type="button" class="btn-edit-member" onclick="openEditModal(selectedMember)" title="Modificar categoría, datos o desagregar">
-                        ✏️ Modificar / Desagregar
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="btn-edit-member" onclick="openEditModal(selectedMember)" title="Modificar categoría, datos o desagregar">
+                            ✏️ Modificar
+                        </button>
+                        <button type="button" class="btn-close-detail" onclick="closeDetailCard()" title="Cerrar ficha">
+                            ✕
+                        </button>
+                    </div>
                 </div>
 
                 <!-- ALERTA DE REGULARIDAD PARA VISITAS (>= 10 ASISTENCIAS) -->
@@ -1021,7 +1009,7 @@
             const includeInactive = document.getElementById('chkIncludeInactive').checked;
 
             if (q.length < 2) {
-                resultsList.innerHTML = '<div class="empty-state">Escribe al menos 2 letras para buscar un hermano, amigo, visita o niño.</div>';
+                resultsList.innerHTML = '';
                 countEl.textContent = '';
                 return;
             }
@@ -1089,10 +1077,28 @@
             }
         }
 
-        function showDetail(m) {
-            document.getElementById('detailEmpty').style.display = 'none';
+        function closeDetailCard() {
+            selectedMember = null;
+            document.querySelectorAll('.member-item').forEach(el => el.classList.remove('selected'));
+            const card = document.getElementById('detailCard');
+            if (card) {
+                card.style.display = 'none';
+                card.classList.remove('active');
+            }
             const content = document.getElementById('detailContent');
-            content.style.display = 'flex';
+            if (content) content.style.display = 'none';
+            document.querySelector('.main-container')?.classList.remove('has-detail');
+        }
+
+        function showDetail(m) {
+            const card = document.getElementById('detailCard');
+            if (card) {
+                card.style.display = 'flex';
+                card.classList.add('active');
+            }
+            document.querySelector('.main-container')?.classList.add('has-detail');
+            const content = document.getElementById('detailContent');
+            if (content) content.style.display = 'flex';
 
             // Avatar con iniciales y color de categoría
             const nTrim = (m.nombre || '').trim();
