@@ -61,6 +61,7 @@ LOCAL_DB_FILE = os.path.join(DATA_DIR, 'local_db.json')
 INITIAL_MEMBERS_FILE = os.path.join(PROJECT_DIR, 'data', 'initial_members.json')
 
 SHEET_ID = os.environ.get('SHEET_ID', '').strip()
+SCORE_CUTOFF_DATE = os.environ.get('SCORE_CUTOFF_DATE', '2026-09-01').strip()
 
 def resolve_sheet_id():
     """Devuelve el ID de hoja activo: variable de entorno > data/sheet_id.txt del proyecto."""
@@ -701,6 +702,61 @@ def index_page():
 def report_page():
     return render_template('report.html')
 
+@app.route('/report/culto-print')
+def report_culto_print():
+    """Generación de informe ejecutivo oficial para PDF e impresión."""
+    fecha = request.args.get('fecha', '').strip() or date.today().strftime('%Y-%m-%d')
+    culto = request.args.get('culto', '').strip()
+    
+    try:
+        f_dt = datetime.strptime(fecha, '%Y-%m-%d')
+        dia_semana = DIAS_ES[f_dt.weekday()]
+        mes_nom = MESES_ES[f_dt.month - 1]
+        fecha_larga = f"{dia_semana}, {f_dt.day:02d} de {mes_nom} de {f_dt.year}"
+    except Exception:
+        fecha_larga = fecha
+        
+    asistencias = db.get('asistencias', [])
+    if not culto or culto.lower() in ('todos', 'todo', 'todos los cultos'):
+        asist_filtradas = [a for a in asistencias if a.get('fecha') == fecha]
+        culto_nombre = 'Jornada Completa (Todos los Cultos)'
+        online = sum(m.get('transmision_online', 0) for k, m in db.get('metricas_cultos', {}).items() if k.startswith(fecha))
+        ujieres_set = set(a.get('ujier') for a in asist_filtradas if a.get('ujier'))
+        for k, m in db.get('metricas_cultos', {}).items():
+            if k.startswith(fecha) and m.get('ujier'):
+                ujieres_set.add(m.get('ujier'))
+        ujier = ', '.join(sorted(ujieres_set)) or ''
+    else:
+        asist_filtradas = [a for a in asistencias if a.get('fecha') == fecha and a.get('culto') == culto]
+        culto_nombre = culto
+        metric = db.get('metricas_cultos', {}).get(f"{fecha}_{culto}", {})
+        online = metric.get('transmision_online', 0)
+        ujier = metric.get('ujier') or (asist_filtradas[0].get('ujier') if asist_filtradas else '')
+        
+    hermanos = sum(1 for a in asist_filtradas if is_hermano(a.get('categoria')))
+    ninos = sum(1 for a in asist_filtradas if a.get('categoria') == 'Niño' or a.get('genero') == 'Niño')
+    amigos = sum(1 for a in asist_filtradas if a.get('categoria') == 'Amigo')
+    visitas = sum(1 for a in asist_filtradas if a.get('categoria') == 'Visita')
+    presenciales = len(asist_filtradas)
+    total_alcance = presenciales + online
+    
+    asist_filtradas.sort(key=lambda x: x.get('hora', ''))
+    
+    return render_template('print_report.html',
+        fecha=fecha,
+        fecha_larga=fecha_larga,
+        culto=culto_nombre,
+        ujier=ujier or 'Ujier en Turno',
+        hermanos=hermanos,
+        ninos=ninos,
+        amigos=amigos,
+        visitas=visitas,
+        presenciales=presenciales,
+        online=online,
+        total_alcance=total_alcance,
+        asistentes=asist_filtradas
+    )
+
 # =========================================================
 # API ENDPOINTS
 # =========================================================
@@ -818,11 +874,12 @@ def api_members_search():
         if a.get('fecha') == fecha and a.get('culto') == culto:
             marked_ids[a.get('member_id')] = a.get('hora')
             
-    # Conteo histórico de asistencias por persona
+    # Conteo oficial de asistencias por persona (Corte: septiembre hacia adelante)
     history_counts = {}
     for a in db.get('asistencias', []):
-        mid = a.get('member_id')
-        history_counts[mid] = history_counts.get(mid, 0) + 1
+        if a.get('fecha', '') >= SCORE_CUTOFF_DATE:
+            mid = a.get('member_id')
+            history_counts[mid] = history_counts.get(mid, 0) + 1
             
     results = []
     for m in matched:
@@ -902,7 +959,7 @@ def api_members_promote_visita():
     if not member:
         return jsonify({'error': 'Miembro no encontrado'}), 404
         
-    tot_asist = sum(1 for a in db.get('asistencias', []) if a.get('member_id') == mid)
+    tot_asist = sum(1 for a in db.get('asistencias', []) if a.get('member_id') == mid and a.get('fecha', '') >= SCORE_CUTOFF_DATE)
     member['total_asistencias'] = tot_asist
     
     if action == 'promote':
@@ -1013,8 +1070,8 @@ def api_attendance_mark():
     sync_sheets_write_asistencia(rec)
     sync_sheets_write_metrics(key, db['metricas_cultos'][key])
     
-    # Chequear si amerita alerta de regularidad de visita
-    tot_asist = sum(1 for a in db['asistencias'] if a.get('member_id') == member_id)
+    # Chequear si amerita alerta de regularidad de visita (con corte septiembre en adelante)
+    tot_asist = sum(1 for a in db['asistencias'] if a.get('member_id') == member_id and a.get('fecha', '') >= SCORE_CUTOFF_DATE)
     sugerir_promo = False
     if member.get('categoria') == 'Visita' and tot_asist >= 10:
         recordar_en = member.get('recordar_en', 10)
@@ -1207,30 +1264,41 @@ def api_members_new():
 @app.route('/api/reports/analytics')
 def api_reports_analytics():
     periodo = request.args.get('periodo', 'ano')
+    fecha_req = request.args.get('fecha', '').strip()
     now = now_local()
     
     asistencias = db.get('asistencias', [])
     filtered = []
     
-    for a in asistencias:
-        f_str = a.get('fecha', '')
-        if not f_str: continue
-        try:
-            f_dt = datetime.strptime(f_str, '%Y-%m-%d')
-        except ValueError:
-            continue
-            
-        if periodo == 'semana':
-            if timedelta(0) <= (now - f_dt) <= timedelta(days=7):
+    if periodo == 'dia':
+        target_fecha = fecha_req or now.strftime('%Y-%m-%d')
+        for a in asistencias:
+            if a.get('fecha') == target_fecha:
+                try:
+                    f_dt = datetime.strptime(a.get('fecha'), '%Y-%m-%d')
+                    filtered.append((f_dt, a))
+                except Exception:
+                    continue
+    else:
+        for a in asistencias:
+            f_str = a.get('fecha', '')
+            if not f_str: continue
+            try:
+                f_dt = datetime.strptime(f_str, '%Y-%m-%d')
+            except ValueError:
+                continue
+                
+            if periodo == 'semana':
+                if timedelta(0) <= (now - f_dt) <= timedelta(days=7):
+                    filtered.append((f_dt, a))
+            elif periodo == 'mes':
+                if f_dt.year == now.year and f_dt.month == now.month:
+                    filtered.append((f_dt, a))
+            elif periodo == 'ano':
+                if f_dt.year == now.year:
+                    filtered.append((f_dt, a))
+            else:
                 filtered.append((f_dt, a))
-        elif periodo == 'mes':
-            if f_dt.year == now.year and f_dt.month == now.month:
-                filtered.append((f_dt, a))
-        elif periodo == 'ano':
-            if f_dt.year == now.year:
-                filtered.append((f_dt, a))
-        else:
-            filtered.append((f_dt, a))
             
     total_asistencias = len(filtered)
     cultos_unicos = len(set(f"{a['fecha']}_{a['culto']}" for _, a in filtered))
@@ -1260,14 +1328,73 @@ def api_reports_analytics():
         mes_nom = MESES_ES[f_dt.month - 1]
         meses_counts[mes_nom] += 1
         
-    total_transmision = sum(m.get('transmision_online', 0) for m in db.get('metricas_cultos', {}).values())
+    if periodo == 'dia':
+        target_fecha = fecha_req or now.strftime('%Y-%m-%d')
+        total_transmision = sum(m.get('transmision_online', 0) for k, m in db.get('metricas_cultos', {}).items() if k.startswith(target_fecha))
+    else:
+        total_transmision = sum(m.get('transmision_online', 0) for m in db.get('metricas_cultos', {}).values())
+        
+    cultos_del_dia = []
+    asistentes_del_dia = []
+    if periodo == 'dia':
+        target_fecha = fecha_req or now.strftime('%Y-%m-%d')
+        cultos_map = {}
+        for _, a in filtered:
+            c_nom = a.get('culto', 'General')
+            if c_nom not in cultos_map:
+                cultos_map[c_nom] = {
+                    'culto': c_nom,
+                    'fecha': target_fecha,
+                    'ujier': a.get('ujier', ''),
+                    'asistentes': 0,
+                    'hombres': 0,
+                    'mujeres': 0,
+                    'ninos': 0,
+                    'amigos': 0,
+                    'visitas': 0
+                }
+            cultos_map[c_nom]['asistentes'] += 1
+            cat = a.get('categoria', '')
+            gen = a.get('genero', '')
+            if is_hermano(cat):
+                if gen == 'Hombre': cultos_map[c_nom]['hombres'] += 1
+                else: cultos_map[c_nom]['mujeres'] += 1
+            elif cat == 'Niño' or gen == 'Niño':
+                cultos_map[c_nom]['ninos'] += 1
+            elif cat == 'Amigo':
+                cultos_map[c_nom]['amigos'] += 1
+            elif cat == 'Visita':
+                cultos_map[c_nom]['visitas'] += 1
+                
+        for c_nom, c_data in cultos_map.items():
+            key = f"{target_fecha}_{c_nom}"
+            m_info = db.get('metricas_cultos', {}).get(key, {})
+            if m_info.get('ujier') and not c_data['ujier']:
+                c_data['ujier'] = m_info.get('ujier')
+            c_data['transmision_online'] = m_info.get('transmision_online', 0)
+            c_data['total_alcance'] = c_data['asistentes'] + c_data['transmision_online']
+            cultos_del_dia.append(c_data)
+            
+        for _, a in sorted(filtered, key=lambda x: x[1].get('hora', '')):
+            asistentes_del_dia.append({
+                'id': a.get('id'),
+                'member_id': a.get('member_id'),
+                'nombre_completo': a.get('nombre_completo'),
+                'categoria': a.get('categoria'),
+                'genero': a.get('genero'),
+                'culto': a.get('culto'),
+                'hora': a.get('hora'),
+                'ujier': a.get('ujier')
+            })
     
     return jsonify({
         'periodo': periodo,
+        'fecha': fecha_req or now.strftime('%Y-%m-%d'),
         'total_asistencias': total_asistencias,
         'cultos_realizados': cultos_unicos,
         'promedio_por_culto': promedio_por_culto,
         'total_transmision_online': total_transmision,
+        'total_alcance': total_asistencias + total_transmision,
         'genero': {
             'hombres': hombres,
             'mujeres': mujeres,
@@ -1279,7 +1406,9 @@ def api_reports_analytics():
         'cultos_ranking': cultos_ranking,
         'dias_ranking': dias_ranking,
         'meses_counts': meses_counts,
-        'meses_ranking': sorted([{'mes': k, 'total': v} for k, v in meses_counts.items()], key=lambda x: x['total'], reverse=True)
+        'meses_ranking': sorted([{'mes': k, 'total': v} for k, v in meses_counts.items()], key=lambda x: x['total'], reverse=True),
+        'cultos_del_dia': cultos_del_dia,
+        'asistentes_del_dia': asistentes_del_dia
     })
 
 @app.route('/api/reports/friends')
@@ -1290,7 +1419,7 @@ def api_reports_friends():
     result = []
     for p in personas:
         m_id = p.get('id')
-        asistencias_p = [a for a in db.get('asistencias', []) if a.get('member_id') == m_id]
+        asistencias_p = [a for a in db.get('asistencias', []) if a.get('member_id') == m_id and a.get('fecha', '') >= SCORE_CUTOFF_DATE]
         fechas = [a.get('fecha') for a in asistencias_p]
         
         tel = p.get('telefono', '').strip()
@@ -1342,10 +1471,14 @@ def api_attendance_current_list():
     culto = request.args.get('culto', '').strip()
     categoria = request.args.get('categoria', '').strip()
     
-    if not fecha or not culto:
-        return jsonify({'error': 'Fecha y culto requeridos'}), 400
+    if not fecha:
+        return jsonify({'error': 'Fecha requerida'}), 400
         
-    matching_asist = [a for a in db.get('asistencias', []) if a.get('fecha') == fecha and a.get('culto') == culto]
+    asistencias = db.get('asistencias', [])
+    if not culto or culto.lower() in ('todos', 'todo', 'todos los cultos'):
+        matching_asist = [a for a in asistencias if a.get('fecha') == fecha]
+    else:
+        matching_asist = [a for a in asistencias if a.get('fecha') == fecha and a.get('culto') == culto]
     
     if categoria and categoria != 'Todos':
         matching_asist = [a for a in matching_asist if a.get('categoria') == categoria]
@@ -1355,25 +1488,24 @@ def api_attendance_current_list():
     results = []
     for a in matching_asist:
         mid = a.get('member_id')
-        m_info = members_by_id.get(mid, {})
+        m = members_by_id.get(mid, {})
         results.append({
-            'id_registro': a.get('id'),
-            'hora': a.get('hora', ''),
+            'id': a.get('id'),
             'member_id': mid,
-            'nombre_completo': a.get('nombre_completo') or f"{m_info.get('nombre', '')} {m_info.get('apellidos', '')}".strip(),
-            'categoria': a.get('categoria') or m_info.get('categoria', 'Hermano'),
-            'genero': a.get('genero') or m_info.get('genero', 'Hombre'),
-            'ujier': a.get('ujier', ''),
-            'telefono': m_info.get('telefono', ''),
-            'fecha_registro': m_info.get('fecha_registro', ''),
-            'tipo_asistencia': a.get('tipo_asistencia', 'Presencial')
+            'nombre_completo': a.get('nombre_completo') or f"{m.get('nombre', '')} {m.get('apellidos', '')}".strip(),
+            'categoria': a.get('categoria') or m.get('categoria', 'Hermano'),
+            'genero': a.get('genero') or m.get('genero', 'Hombre'),
+            'telefono': m.get('telefono', ''),
+            'hora': a.get('hora', ''),
+            'culto': a.get('culto', ''),
+            'ujier': a.get('ujier', '')
         })
         
     results.sort(key=lambda x: x['hora'], reverse=True)
     
     return jsonify({
         'fecha': fecha,
-        'culto': culto,
+        'culto': culto or 'Todos los cultos',
         'categoria': categoria or 'Todos',
         'total': len(results),
         'attendees': results
@@ -1381,37 +1513,49 @@ def api_attendance_current_list():
 
 @app.route('/api/reports/export-culto-csv')
 def api_reports_export_culto_csv():
-    """Descarga de informe específico para el culto activo seleccionado."""
+    """Descarga de informe específico para el culto activo o jornada completa."""
     fecha = request.args.get('fecha', '').strip()
     culto = request.args.get('culto', '').strip()
     
-    if not fecha or not culto:
-        return jsonify({'error': 'Fecha y culto son requeridos'}), 400
+    if not fecha:
+        return jsonify({'error': 'Fecha es requerida'}), 400
         
-    key = f"{fecha}_{culto}"
-    metric = db.get('metricas_cultos', {}).get(key, {})
-    asistencias_culto = [a for a in db.get('asistencias', []) if a.get('fecha') == fecha and a.get('culto') == culto]
+    asistencias = db.get('asistencias', [])
+    if not culto or culto.lower() in ('todos', 'todo', 'todos los cultos'):
+        asistencias_culto = [a for a in asistencias if a.get('fecha') == fecha]
+        culto_display = 'Jornada_Completa'
+        online = sum(m.get('transmision_online', 0) for k, m in db.get('metricas_cultos', {}).items() if k.startswith(fecha))
+        ujieres_set = set(a.get('ujier') for a in asistencias_culto if a.get('ujier'))
+        for k, m in db.get('metricas_cultos', {}).items():
+            if k.startswith(fecha) and m.get('ujier'):
+                ujieres_set.add(m.get('ujier'))
+        ujier = ', '.join(sorted(ujieres_set)) or ''
+    else:
+        key = f"{fecha}_{culto}"
+        metric = db.get('metricas_cultos', {}).get(key, {})
+        asistencias_culto = [a for a in asistencias if a.get('fecha') == fecha and a.get('culto') == culto]
+        culto_display = culto
+        online = metric.get('transmision_online', 0)
+        ujier = metric.get('ujier') or (asistencias_culto[0].get('ujier') if asistencias_culto else '')
     
     hermanos = sum(1 for a in asistencias_culto if is_hermano(a.get('categoria')))
-    ninos = sum(1 for a in asistencias_culto if a.get('categoria') == 'Niño')
+    ninos = sum(1 for a in asistencias_culto if a.get('categoria') == 'Niño' or a.get('genero') == 'Niño')
     amigos = sum(1 for a in asistencias_culto if a.get('categoria') == 'Amigo')
     visitas = sum(1 for a in asistencias_culto if a.get('categoria') == 'Visita')
-    online = metric.get('transmision_online', 0)
-    ujier = metric.get('ujier') or (asistencias_culto[0].get('ujier') if asistencias_culto else '')
     
     output = io.StringIO()
     writer = csv.writer(output)
     
-    writer.writerow(['INFORME DE ASISTENCIA - IPUE GRANADA'])
+    writer.writerow(['INFORME OFICIAL DE ASISTENCIA - IPUE GRANADA'])
     writer.writerow(['Fecha', fecha])
-    writer.writerow(['Culto', culto])
+    writer.writerow(['Culto', culto_display])
     writer.writerow(['Ujier Responsable', ujier])
     writer.writerow(['Total Presenciales', len(asistencias_culto)])
     writer.writerow(['Hermanos', hermanos, 'Amigos', amigos, 'Visitas', visitas, 'Ninos', ninos])
-    writer.writerow(['Transmision Online (YouTube)', online])
+    writer.writerow(['Transmision Online', online])
     writer.writerow(['Alcance Total', len(asistencias_culto) + online])
     writer.writerow([])
-    writer.writerow(['ID_Registro', 'Hora', 'ID_Miembro', 'Nombre_Completo', 'Categoria', 'Genero', 'Ujier', 'Tipo', 'Observacion'])
+    writer.writerow(['ID_Registro', 'Hora', 'ID_Miembro', 'Nombre_Completo', 'Categoria', 'Genero', 'Culto', 'Ujier', 'Tipo'])
     
     for a in sorted(asistencias_culto, key=lambda x: x.get('hora', '')):
         writer.writerow([
@@ -1421,16 +1565,17 @@ def api_reports_export_culto_csv():
             a.get('nombre_completo', ''),
             a.get('categoria', ''),
             a.get('genero', ''),
+            a.get('culto', ''),
             a.get('ujier', ''),
-            a.get('tipo_asistencia', 'Presencial'),
-            a.get('observacion', '')
+            a.get('tipo_asistencia', 'Presencial')
         ])
         
-    safe_culto = re.sub(r'[^a-zA-Z0-9_]', '_', normalize_str(culto))
-    filename = f"informe_culto_{fecha}_{safe_culto}.csv"
-    
-    return Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8',
-                    headers={'Content-Disposition': f'attachment; filename="{filename}"'})
+    safe_name = f"Asistencia_{fecha}_{culto_display.replace(' ', '_')}.csv"
+    return Response(
+        '\ufeff' + output.getvalue(),
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': f'attachment; filename="{safe_name}"'}
+    )
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
