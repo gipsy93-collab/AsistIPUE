@@ -274,16 +274,12 @@
                     <input type="text" id="newApe" class="form-control" placeholder="Ej. Gómez Pérez">
                 </div>
                 <div class="form-group">
-                    <label>Fecha de Registro *</label>
-                    <input type="date" id="newFechaRegistro" class="form-control" required>
-                </div>
-                <div class="form-group">
                     <label>Categoría / Estado Eclesial (Columna B en Sheets) *</label>
                     <select id="newCat" class="form-control" onchange="onCategorySelectChange()">
-                        <option value="Miembro activo">Miembro activo (Hermano bautizado)</option>
-                        <option value="Hermano">Hermano</option>
-                        <option value="Amigo">Amigo (Asistente regular no bautizado)</option>
-                        <option value="Visita" selected>Visita (Nuevo / Primera vez)</option>
+                        <option value="Visita" selected>Visita (Hoja Visitas - Nuevo / Primera vez)</option>
+                        <option value="Amigo">Amigo (Hoja Amigos - Asistente regular no bautizado)</option>
+                        <option value="Miembro activo">Miembro activo (Hoja Miembros - Bautizado)</option>
+                        <option value="Hermano">Hermano (Hoja Miembros)</option>
                         <option value="Niño">Niño</option>
                     </select>
                 </div>
@@ -333,10 +329,6 @@
                 <div class="form-group">
                     <label>Apellidos</label>
                     <input type="text" id="editApe" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Fecha de Registro</label>
-                    <input type="date" id="editFechaReg" class="form-control">
                 </div>
                 <div class="form-group">
                     <label>Categoría / Estado Eclesial (Columna B en Sheets) *</label>
@@ -1223,7 +1215,8 @@
             }
             document.getElementById('detGender').textContent = m.genero || 'Hombre';
             document.getElementById('detPhone').textContent = m.telefono || '—';
-            document.getElementById('detFechaReg').textContent = m.fecha_registro || 'No registrada';
+            const regFormatted = m.fecha_registro ? (m.hora_registro ? `${m.fecha_registro} (${m.hora_registro})` : m.fecha_registro) : 'No registrada';
+            document.getElementById('detFechaReg').textContent = regFormatted;
             document.getElementById('detTotalAsist').textContent = `${m.total_asistencias || 0} cultos`;
 
             // Alerta de visita frecuente
@@ -1429,7 +1422,6 @@
         // 5. MODAL REGISTRO NUEVO
         function openNewMemberModal(defaultCat = 'Visita') {
             document.getElementById('newCat').value = defaultCat;
-            document.getElementById('newFechaRegistro').value = activeDate || deviceToday();
             document.getElementById('newModalTitle').textContent = '+ Registrar Nuevo';
             document.getElementById('newMemberModal').style.display = 'flex';
             setTimeout(() => document.getElementById('newNom').focus(), 150);
@@ -1452,7 +1444,7 @@
             if (!requireActiveUjier()) return;
             const nom = document.getElementById('newNom').value.trim();
             const ape = document.getElementById('newApe').value.trim();
-            const fechaReg = document.getElementById('newFechaRegistro').value || activeDate || deviceToday();
+            const fechaReg = activeDate || deviceToday();
             const cat = document.getElementById('newCat').value;
             const gen = document.getElementById('newGen').value;
             const tel = document.getElementById('newTel').value.trim();
@@ -1522,7 +1514,6 @@
             memberBeingEdited = m;
             document.getElementById('editNom').value = m.nombre || '';
             document.getElementById('editApe').value = m.apellidos || '';
-            document.getElementById('editFechaReg').value = m.fecha_registro || '';
             
             const editCatSelect = document.getElementById('editCat');
             const targetCat = m.categoria || 'Miembro activo';
@@ -1589,7 +1580,7 @@
                 id: memberBeingEdited.id,
                 nombre: document.getElementById('editNom').value.trim(),
                 apellidos: document.getElementById('editApe').value.trim(),
-                fecha_registro: document.getElementById('editFechaReg').value,
+                fecha_registro: memberBeingEdited.fecha_registro || '',
                 categoria: document.getElementById('editCat').value,
                 genero: document.getElementById('editGen').value,
                 telefono: document.getElementById('editTel').value.trim(),
