@@ -113,16 +113,6 @@
     <main class="main-container">
         <!-- COLUMNA IZQUIERDA: BÚSQUEDA Y REGISTRO -->
         <div class="card">
-            <!-- BOTÓN ÚNICO DE REGISTRO NUEVO -->
-            <button class="btn-new-main" onclick="openNewMemberModal()">
-                <span>+</span> Registrar Nuevo
-            </button>
-
-            <!-- BOTÓN DESTACADO PARA APARTADO DE MODIFICACIONES -->
-            <button type="button" class="btn-manage-open" onclick="openGlobalManageModal()">
-                <span>✏️</span> Apartado de Modificaciones / Desagregar Asistente
-            </button>
-
             <div class="search-header">
                 <span class="section-title">Buscar Asistente</span>
                 <label style="font-size: 11px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 4px;">
@@ -138,9 +128,18 @@
                 <input type="text" 
                        id="searchInput" 
                        class="search-input" 
-                       placeholder="Escribe nombre, apellido o apodo (ej. Manu, Rafa, Yois)..." 
-                       autofocus>
+                       placeholder="Escribe nombre, apellido o apodo (ej. Manu, Rafa, Yois)...">
             </div>
+
+            <!-- BOTÓN ÚNICO DE REGISTRO NUEVO (DEBAJO DE LA CAJA DE BÚSQUEDA) -->
+            <button class="btn-new-main" onclick="openNewMemberModal()" style="margin-top: 10px;">
+                <span>+</span> Registrar Nuevo
+            </button>
+
+            <!-- BOTÓN DESTACADO PARA APARTADO DE MODIFICACIONES -->
+            <button type="button" class="btn-manage-open" onclick="openGlobalManageModal()">
+                <span>✏️</span> Apartado de Modificaciones / Desagregar Asistente
+            </button>
 
             <div class="search-hint">
                 <span>Tolera faltas de ortografía y apodos comunes</span>
@@ -513,6 +512,7 @@
 
         // 1. INICIALIZACIÓN
         document.addEventListener('DOMContentLoaded', async () => {
+            window.scrollTo(0, 0);
             await initApp();
             
             document.getElementById('searchInput').addEventListener('input', (e) => {
