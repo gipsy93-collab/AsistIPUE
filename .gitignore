@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+*.json
+!data/initial_members.json
+!data/local_db.json
+!vercel.json
+*.xlsx
+.~lock.*
+Captura*.jpeg
