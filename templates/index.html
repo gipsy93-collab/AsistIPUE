@@ -41,6 +41,9 @@
                 <span class="yt-btn-text">🔴 YouTube En Vivo</span>
             </a>
             <div class="nav-links">
+                <button type="button" class="nav-btn btn-sync-sheets" onclick="triggerSheetsSync()" title="Sincronizar datos con Google Sheets">
+                    <span>🔄</span><span class="btn-label-desktop"> Sincronizar</span>
+                </button>
                 <button type="button" class="nav-btn" onclick="openGlobalManageModal()" title="Modificar o Desagregar asistente">
                     <span>✏️</span><span class="btn-label-desktop"> Modificar</span>
                 </button>
@@ -619,6 +622,38 @@
             container.classList.add('animate-sweep');
         }
 
+        function isHermanoCategory(cat) {
+            const c = (cat || '').trim().toLowerCase();
+            return c === 'hermano' || c === 'hermana' || c === 'miembro activo' || c === 'miembro' || c === 'hermano/a' || c === 'activo';
+        }
+
+        async function triggerSheetsSync(isSilent = false) {
+            const btn = document.querySelector('.btn-sync-sheets');
+            if (btn) btn.classList.add('rotating');
+            try {
+                const res = await fetch('/api/sync-sheets', { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    await initApp();
+                    const q = document.getElementById('searchInput')?.value || '';
+                    if (q.length >= 2) doSearch(q);
+                    if (!isSilent) {
+                        alert(`✅ Sincronización exitosa con Google Sheets:\n\n• Miembros actualizados: ${data.miembros_count}\n• Ujieres: ${data.ujieres_count}\n• Asistencias: ${data.asistencias_count}\n\nLos cambios hechos en el Sheet ya se reflejan en la app.`);
+                    }
+                } else {
+                    if (!isSilent) {
+                        alert(`⚠️ Estado de Google Sheets:\n\n${data.message}`);
+                    }
+                }
+            } catch (e) {
+                if (!isSilent) {
+                    alert('Error conectando al servidor para sincronizar con Sheets.');
+                }
+            } finally {
+                if (btn) btn.classList.remove('rotating');
+            }
+        }
+
         function updateMobileServiceSummary() {
             const sumEl = document.getElementById('mobileServiceSummaryText');
             if (!sumEl) return;
@@ -1028,8 +1063,9 @@
                 currentResults = members;
                 resultsList.innerHTML = members.map((m, idx) => {
                     const isAttended = m.asistio;
-                    const catClass = m.categoria === 'Hermano' ? 'tag-hermano' : (m.categoria === 'Niño' ? 'tag-nino' : (m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
-                    const dotColor = m.categoria === 'Hermano' ? '#0284c7' : (m.categoria === 'Niño' ? '#d97706' : (m.categoria === 'Amigo' ? '#059669' : '#7e22ce'));
+                    const isHerm = isHermanoCategory(m.categoria);
+                    const catClass = isHerm ? 'tag-hermano' : (m.categoria === 'Niño' ? 'tag-nino' : (m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
+                    const dotColor = isHerm ? '#0284c7' : (m.categoria === 'Niño' ? '#d97706' : (m.categoria === 'Amigo' ? '#059669' : '#7e22ce'));
                     const isSelected = selectedMember && selectedMember.id === m.id ? 'selected' : '';
                     const isInactive = m.estado === 'Inactivo';
                     const fullName = escapeHtml(`${m.nombre} ${m.apellidos}`);
@@ -1108,7 +1144,7 @@
             const avatarEl = document.getElementById('detAvatar');
             avatarEl.textContent = (init1 + init2).toUpperCase() || '👤';
             
-            if (m.categoria === 'Hermano') {
+            if (isHermanoCategory(m.categoria)) {
                 avatarEl.style.background = 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)';
             } else if (m.categoria === 'Niño') {
                 avatarEl.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
@@ -1121,7 +1157,7 @@
             document.getElementById('detName').textContent = `${m.nombre} ${m.apellidos}`;
             const catBadge = document.getElementById('detCategory');
             catBadge.textContent = m.categoria;
-            const catClass = m.categoria === 'Hermano' ? 'tag-hermano' : (m.categoria === 'Niño' ? 'tag-nino' : (m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
+            const catClass = isHermanoCategory(m.categoria) ? 'tag-hermano' : (m.categoria === 'Niño' ? 'tag-nino' : (m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
             catBadge.className = `person-category-badge ${catClass}`;
 
             document.getElementById('detInactiveBadge').style.display = m.estado === 'Inactivo' ? 'inline-block' : 'none';
@@ -1497,7 +1533,7 @@
 
                 // Contar por categorías para los badges de las pestañas
                 const cntTodos = allCurrentAttendees.length;
-                const cntHermanos = allCurrentAttendees.filter(a => a.categoria === 'Hermano').length;
+                const cntHermanos = allCurrentAttendees.filter(a => isHermanoCategory(a.categoria)).length;
                 const cntAmigos = allCurrentAttendees.filter(a => a.categoria === 'Amigo').length;
                 const cntVisitas = allCurrentAttendees.filter(a => a.categoria === 'Visita').length;
                 const cntNinos = allCurrentAttendees.filter(a => a.categoria === 'Niño').length;
@@ -1534,7 +1570,9 @@
             const q = (query || document.getElementById('filterAttendeesInput').value || '').trim().toLowerCase();
 
             let list = allCurrentAttendees;
-            if (activeAttendeesCategory !== 'Todos') {
+            if (activeAttendeesCategory === 'Hermano') {
+                list = list.filter(a => isHermanoCategory(a.categoria));
+            } else if (activeAttendeesCategory !== 'Todos') {
                 list = list.filter(a => a.categoria === activeAttendeesCategory);
             }
             if (q) {
@@ -1547,8 +1585,9 @@
             }
 
             container.innerHTML = list.map(a => {
-                const catClass = a.categoria === 'Hermano' ? 'tag-hermano' : (a.categoria === 'Niño' ? 'tag-nino' : (a.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
-                const dotColor = a.categoria === 'Hermano' ? '#0284c7' : (a.categoria === 'Niño' ? '#d97706' : (a.categoria === 'Amigo' ? '#059669' : '#7e22ce'));
+                const isHerm = isHermanoCategory(a.categoria);
+                const catClass = isHerm ? 'tag-hermano' : (a.categoria === 'Niño' ? 'tag-nino' : (a.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
+                const dotColor = isHerm ? '#0284c7' : (a.categoria === 'Niño' ? '#d97706' : (a.categoria === 'Amigo' ? '#059669' : '#7e22ce'));
                 return `
                     <div class="attendee-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#ffffff;border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
                         <div>
