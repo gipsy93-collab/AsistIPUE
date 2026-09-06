@@ -3,6 +3,7 @@ import sys
 import json
 import csv
 import io
+import re
 import uuid
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, Response, send_from_directory
@@ -347,6 +348,45 @@ def sync_sheets_write_metrics(key, data):
     except Exception as e:
         print(f'Error sync metricas a Sheets: {e}')
 
+def sync_sheets_add_ujier(nombre):
+    sh = get_sheet()
+    if not sh: return
+    try:
+        ws = sh.worksheet('Ujieres')
+        all_v = ws.get_all_values()
+        for r in all_v:
+            if r and r[0].strip().lower() == nombre.strip().lower():
+                return
+        ws.append_row([nombre, now_local().strftime('%Y-%m-%d'), 0])
+    except Exception as e:
+        print(f'Error sync add ujier a Sheets: {e}')
+
+def sync_sheets_update_ujier(old_nom, new_nom):
+    sh = get_sheet()
+    if not sh: return
+    try:
+        ws = sh.worksheet('Ujieres')
+        all_v = ws.get_all_values()
+        for i, r in enumerate(all_v):
+            if i == 0: continue
+            if r and r[0].strip().lower() == old_nom.strip().lower():
+                ws.update_cell(i + 1, 1, new_nom)
+                break
+    except Exception as e:
+        print(f'Error sync update ujier a Sheets: {e}')
+
+def sync_sheets_delete_ujier(nombre):
+    sh = get_sheet()
+    if not sh: return
+    try:
+        ws = sh.worksheet('Ujieres')
+        all_v = ws.get_all_values()
+        for i in range(len(all_v) - 1, 0, -1):
+            if all_v[i] and all_v[i][0].strip().lower() == nombre.strip().lower():
+                ws.delete_rows(i + 1)
+    except Exception as e:
+        print(f'Error sync delete ujier a Sheets: {e}')
+
 # =========================================================
 # UTILIDADES DE FECHAS EN ESPAÑOL
 # =========================================================
@@ -423,7 +463,44 @@ def api_add_ujier():
         db['ujieres'].append(nombre)
         db['ujieres'].sort()
         save_db(db)
+        sync_sheets_add_ujier(nombre)
     return jsonify({'status': 'ok', 'ujieres': db['ujieres']})
+
+@app.route('/api/ujieres/update', methods=['POST'])
+def api_update_ujier():
+    global db
+    data = request.json or {}
+    old_nombre = data.get('old_name', '').strip()
+    new_nombre = data.get('new_name', '').strip()
+    if not old_nombre or not new_nombre:
+        return jsonify({'error': 'Nombre actual y nuevo son obligatorios'}), 400
+    if old_nombre in db.get('ujieres', []):
+        db['ujieres'] = [new_nombre if u == old_nombre else u for u in db['ujieres']]
+        db['ujieres'] = sorted(list(set(db['ujieres'])))
+        for a in db.get('asistencias', []):
+            if a.get('ujier') == old_nombre:
+                a['ujier'] = new_nombre
+        for m in db.get('metricas_cultos', {}).values():
+            if m.get('ujier') == old_nombre:
+                m['ujier'] = new_nombre
+        save_db(db)
+        sync_sheets_update_ujier(old_nombre, new_nombre)
+        return jsonify({'status': 'ok', 'ujieres': db['ujieres']})
+    return jsonify({'error': f'Ujier "{old_nombre}" no encontrado'}), 404
+
+@app.route('/api/ujieres/delete', methods=['POST'])
+def api_delete_ujier():
+    global db
+    data = request.json or {}
+    nombre = data.get('nombre', '').strip()
+    if not nombre:
+        return jsonify({'error': 'Nombre requerido'}), 400
+    if nombre in db.get('ujieres', []):
+        db['ujieres'] = [u for u in db['ujieres'] if u != nombre]
+        save_db(db)
+        sync_sheets_delete_ujier(nombre)
+        return jsonify({'status': 'ok', 'ujieres': db['ujieres']})
+    return jsonify({'error': f'Ujier "{nombre}" no encontrado'}), 404
 
 @app.route('/api/members/search')
 def api_members_search():
@@ -497,6 +574,8 @@ def api_members_update():
         member['genero'] = data['genero'].strip()
     if 'telefono' in data:
         member['telefono'] = data['telefono'].strip()
+    if 'fecha_registro' in data and data['fecha_registro'].strip():
+        member['fecha_registro'] = data['fecha_registro'].strip()
     if 'estado' in data and data['estado']:
         member['estado'] = data['estado'].strip() # 'Activo' o 'Inactivo'
         
@@ -716,10 +795,15 @@ def api_members_new():
     categoria = data.get('categoria', 'Visita').strip() # Visita, Amigo, Hermano, Niño
     genero = data.get('genero', 'Hombre').strip() # Hombre, Mujer, Niño
     telefono = data.get('telefono', '').strip()
-    fecha_reg = data.get('fecha', now_local().strftime('%Y-%m-%d')).strip()
+    fecha_reg = (data.get('fecha_registro') or data.get('fecha') or now_local().strftime('%Y-%m-%d')).strip()
     culto = data.get('culto', '').strip()
     ujier = data.get('ujier', '').strip()
     marcar_asistencia = data.get('marcar_asistencia', True)
+    
+    if ujier and ujier not in db['ujieres']:
+        db['ujieres'].append(ujier)
+        db['ujieres'].sort()
+        sync_sheets_add_ujier(ujier)
     
     if not nombre:
         return jsonify({'error': 'El nombre es obligatorio'}), 400
@@ -934,6 +1018,103 @@ def api_reports_export_csv():
         ])
     return Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8',
                     headers={'Content-Disposition': 'attachment; filename=asistencia_ipue_granada.csv'})
+
+@app.route('/api/attendance/current-list')
+def api_attendance_current_list():
+    """Devuelve el listado detallado de asistentes para un culto y fecha específicos."""
+    fecha = request.args.get('fecha', '').strip()
+    culto = request.args.get('culto', '').strip()
+    categoria = request.args.get('categoria', '').strip()
+    
+    if not fecha or not culto:
+        return jsonify({'error': 'Fecha y culto requeridos'}), 400
+        
+    matching_asist = [a for a in db.get('asistencias', []) if a.get('fecha') == fecha and a.get('culto') == culto]
+    
+    if categoria and categoria != 'Todos':
+        matching_asist = [a for a in matching_asist if a.get('categoria') == categoria]
+        
+    members_by_id = {m.get('id'): m for m in db.get('miembros', [])}
+    
+    results = []
+    for a in matching_asist:
+        mid = a.get('member_id')
+        m_info = members_by_id.get(mid, {})
+        results.append({
+            'id_registro': a.get('id'),
+            'hora': a.get('hora', ''),
+            'member_id': mid,
+            'nombre_completo': a.get('nombre_completo') or f"{m_info.get('nombre', '')} {m_info.get('apellidos', '')}".strip(),
+            'categoria': a.get('categoria') or m_info.get('categoria', 'Hermano'),
+            'genero': a.get('genero') or m_info.get('genero', 'Hombre'),
+            'ujier': a.get('ujier', ''),
+            'telefono': m_info.get('telefono', ''),
+            'fecha_registro': m_info.get('fecha_registro', ''),
+            'tipo_asistencia': a.get('tipo_asistencia', 'Presencial')
+        })
+        
+    results.sort(key=lambda x: x['hora'], reverse=True)
+    
+    return jsonify({
+        'fecha': fecha,
+        'culto': culto,
+        'categoria': categoria or 'Todos',
+        'total': len(results),
+        'attendees': results
+    })
+
+@app.route('/api/reports/export-culto-csv')
+def api_reports_export_culto_csv():
+    """Descarga de informe específico para el culto activo seleccionado."""
+    fecha = request.args.get('fecha', '').strip()
+    culto = request.args.get('culto', '').strip()
+    
+    if not fecha or not culto:
+        return jsonify({'error': 'Fecha y culto son requeridos'}), 400
+        
+    key = f"{fecha}_{culto}"
+    metric = db.get('metricas_cultos', {}).get(key, {})
+    asistencias_culto = [a for a in db.get('asistencias', []) if a.get('fecha') == fecha and a.get('culto') == culto]
+    
+    hermanos = sum(1 for a in asistencias_culto if a.get('categoria') == 'Hermano')
+    ninos = sum(1 for a in asistencias_culto if a.get('categoria') == 'Niño')
+    amigos = sum(1 for a in asistencias_culto if a.get('categoria') == 'Amigo')
+    visitas = sum(1 for a in asistencias_culto if a.get('categoria') == 'Visita')
+    online = metric.get('transmision_online', 0)
+    ujier = metric.get('ujier') or (asistencias_culto[0].get('ujier') if asistencias_culto else '')
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow(['INFORME DE ASISTENCIA - IPUE GRANADA'])
+    writer.writerow(['Fecha', fecha])
+    writer.writerow(['Culto', culto])
+    writer.writerow(['Ujier Responsable', ujier])
+    writer.writerow(['Total Presenciales', len(asistencias_culto)])
+    writer.writerow(['Hermanos', hermanos, 'Amigos', amigos, 'Visitas', visitas, 'Ninos', ninos])
+    writer.writerow(['Transmision Online (YouTube)', online])
+    writer.writerow(['Alcance Total', len(asistencias_culto) + online])
+    writer.writerow([])
+    writer.writerow(['ID_Registro', 'Hora', 'ID_Miembro', 'Nombre_Completo', 'Categoria', 'Genero', 'Ujier', 'Tipo', 'Observacion'])
+    
+    for a in sorted(asistencias_culto, key=lambda x: x.get('hora', '')):
+        writer.writerow([
+            a.get('id', ''),
+            a.get('hora', ''),
+            a.get('member_id', ''),
+            a.get('nombre_completo', ''),
+            a.get('categoria', ''),
+            a.get('genero', ''),
+            a.get('ujier', ''),
+            a.get('tipo_asistencia', 'Presencial'),
+            a.get('observacion', '')
+        ])
+        
+    safe_culto = re.sub(r'[^a-zA-Z0-9_]', '_', normalize_str(culto))
+    filename = f"informe_culto_{fecha}_{safe_culto}.csv"
+    
+    return Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8',
+                    headers={'Content-Disposition': f'attachment; filename="{filename}"'})
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):

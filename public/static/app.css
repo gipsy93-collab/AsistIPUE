@@ -462,6 +462,150 @@ body {
 .chip-online { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
 .chip-online .dot-chip { background: #7c3aed; }
 
+/* CHIPS INTERACTIVOS (TOCAR PARA VER ASISTENTES) */
+.interactive-chip {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.interactive-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+    filter: brightness(1.03);
+}
+
+.interactive-chip:active {
+    transform: translateY(0);
+}
+
+.chip-action-hint {
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0.85;
+    background: rgba(0, 0, 0, 0.08);
+    padding: 2px 5px;
+    border-radius: 6px;
+    margin-left: 2px;
+}
+
+.chip-total .chip-action-hint {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+/* BOTÓN GESTIÓN DE UJIERES */
+.btn-ujier-manage {
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-left: 6px;
+    transition: var(--transition);
+}
+
+.btn-ujier-manage:hover {
+    background: #bae6fd;
+    color: #0c4a6e;
+    transform: scale(1.04);
+}
+
+/* PULSO Y RESALTE CUANDO FALTA FIRMA DE UJIER */
+@keyframes shakeUjier {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+.ujier-required-pulse {
+    animation: shakeUjier 0.5s ease-in-out;
+    border-color: #ef4444 !important;
+    background: #fef2f2 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35) !important;
+}
+
+/* BOTÓN DESCARGAR INFORME POR CULTO */
+.btn-export-culto {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-full);
+    padding: 7px 15px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    transition: var(--transition);
+}
+
+.btn-export-culto:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45);
+    filter: brightness(1.05);
+}
+
+/* PESTAÑAS DE FILTRO EN MODAL DE ASISTENTES */
+.attendees-filter-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-top: 8px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.attendees-tab-btn {
+    background: #f1f5f9;
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-full);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition);
+}
+
+.attendees-tab-btn:hover {
+    background: #e2e8f0;
+    color: var(--text-main);
+}
+
+.attendees-tab-btn.active {
+    background: var(--primary-blue);
+    color: #ffffff;
+    border-color: var(--primary-blue);
+    box-shadow: 0 2px 6px rgba(0, 64, 133, 0.25);
+}
+
+.btn-row-unmark {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.btn-row-unmark:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+    transform: scale(1.03);
+}
+
 /* =========================================================
    LAYOUT PRINCIPAL
 ========================================================= */
