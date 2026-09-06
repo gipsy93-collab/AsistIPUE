@@ -12,14 +12,24 @@
 <body>
 
     <!-- HEADER INSTITUCIONAL -->
+    <!-- HEADER INSTITUCIONAL -->
     <header class="header">
-        <div class="header-left">
-            <div class="header-title-row">
-                <span class="header-title">IPUE GRANADA</span>
-                <span class="header-badge">Control de Asistencia</span>
+        <div class="header-brand-group">
+            <div class="logo-wrapper">
+                <div class="logo-container logo-option-1" id="churchLogoContainer" title="IPUE Granada - Haz clic para interactuar" onclick="triggerLogoEffect()">
+                    <div class="logo-shimmer"></div>
+                    <img src="/static/logo_ipue.jpeg" onerror="this.onerror=null;this.src='/api/logo';" alt="Logo IPUE Granada" class="church-logo">
+                    <span class="logo-subtext">Granada</span>
+                </div>
             </div>
-            <div class="header-date" id="currentDateDisplay">
-                📅 Cargando fecha...
+            <div class="header-left">
+                <div class="header-title-row">
+                    <span class="header-title">IPUE GRANADA</span>
+                    <span class="header-badge">Control de Asistencia</span>
+                </div>
+                <div class="header-date" id="currentDateDisplay">
+                    📅 Cargando fecha...
+                </div>
             </div>
         </div>
         <div class="header-right">
@@ -28,25 +38,32 @@
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                 </svg>
                 <span class="yt-pulse"></span>
-                <span>🔴 YouTube En Vivo</span>
+                <span class="yt-btn-text">🔴 YouTube En Vivo</span>
             </a>
             <div class="nav-links">
-                <button type="button" class="nav-btn" onclick="openGlobalManageModal()">✏️ Modificar / Desagregar</button>
-                <button type="button" class="nav-btn" onclick="openAnalyticsModal()">📊 Analítica & Histórico</button>
-            </div>
-            <div class="logo-wrapper">
-                <div class="logo-container logo-option-1" id="churchLogoContainer" title="IPUE Granada - Haz clic para interactuar" onclick="triggerLogoEffect()">
-                    <div class="logo-shimmer"></div>
-                    <img src="/static/logo_ipue.jpeg" onerror="this.onerror=null;this.src='/api/logo';" alt="Logo IPUE Granada" class="church-logo">
-                    <span class="logo-subtext">Granada</span>
-                </div>
+                <button type="button" class="nav-btn" onclick="openGlobalManageModal()" title="Modificar o Desagregar asistente">
+                    <span>✏️</span><span class="btn-label-desktop"> Modificar</span>
+                </button>
+                <button type="button" class="nav-btn" onclick="openAnalyticsModal()" title="Analítica e Histórico">
+                    <span>📊</span><span class="btn-label-desktop"> Analítica</span>
+                </button>
             </div>
         </div>
     </header>
 
     <!-- BARRA DE CONFIGURACIÓN DEL CULTO ACTIVO -->
     <section class="control-bar">
-        <div class="service-selector-group">
+        <!-- TIRA RESUMEN COMPACTA PARA MÓVILES -->
+        <div class="mobile-service-strip" onclick="toggleMobileServiceGroup()">
+            <div class="mobile-service-summary">
+                <span id="mobileServiceSummaryText">📅 Cargando culto...</span>
+            </div>
+            <button type="button" class="btn-mobile-expand" id="btnToggleMobileService" title="Ajustar fecha, culto o ujier">
+                ⚙️ Ajustar ▾
+            </button>
+        </div>
+
+        <div class="service-selector-group" id="serviceSelectorGroup">
             <!-- FECHA -->
             <div class="input-pill">
                 <label>Fecha:</label>
@@ -124,7 +141,7 @@
     <!-- ÁREA PRINCIPAL -->
     <main class="main-container">
         <!-- COLUMNA IZQUIERDA: BÚSQUEDA Y REGISTRO -->
-        <div class="card">
+        <div class="card search-main-card" id="searchCardSection">
             <div class="search-header">
                 <span class="section-title">Buscar Asistente</span>
                 <label style="font-size: 11px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 4px;">
@@ -614,6 +631,36 @@
             container.classList.add('animate-sweep');
         }
 
+        function updateMobileServiceSummary() {
+            const sumEl = document.getElementById('mobileServiceSummaryText');
+            if (!sumEl) return;
+            const dateVal = document.getElementById('serviceDate')?.value || activeDate || '';
+            const selectCulto = document.getElementById('serviceCulto');
+            const selectUjier = document.getElementById('serviceUjier');
+            const cultoVal = (selectCulto ? selectCulto.value : activeCulto) || 'Culto';
+            const ujierVal = (selectUjier ? selectUjier.value : activeUjier) || '';
+
+            let dateStr = dateVal;
+            if (dateVal) {
+                const parts = dateVal.split('-');
+                if (parts.length === 3) {
+                    dateStr = `${parts[2]}/${parts[1]}`;
+                }
+            }
+            const ujierStr = ujierVal ? ujierVal.split(' ')[0] : 'Sin Ujier';
+            sumEl.textContent = `📅 ${dateStr} · ${cultoVal} · ✍️ ${ujierStr}`;
+        }
+
+        function toggleMobileServiceGroup() {
+            const group = document.getElementById('serviceSelectorGroup');
+            const btn = document.getElementById('btnToggleMobileService');
+            if (!group) return;
+            const isExpanded = group.classList.toggle('mobile-open');
+            if (btn) {
+                btn.textContent = isExpanded ? 'Cerrar ▴' : '⚙️ Ajustar ▾';
+            }
+        }
+
         // 1. INICIALIZACIÓN
         document.addEventListener('DOMContentLoaded', async () => {
             window.scrollTo(0, 0);
@@ -627,10 +674,34 @@
                 });
                 // En móviles, ajustar el scroll al enfocar para evitar que el teclado oculte resultados
                 searchInput.addEventListener('focus', () => {
+                    const group = document.getElementById('serviceSelectorGroup');
+                    if (group && group.classList.contains('mobile-open')) {
+                        group.classList.remove('mobile-open');
+                        const btn = document.getElementById('btnToggleMobileService');
+                        if (btn) btn.textContent = '⚙️ Ajustar ▾';
+                    }
                     if (window.innerWidth <= 860) {
                         setTimeout(() => {
-                            document.querySelector('.search-header')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 250);
+                            const searchCard = document.getElementById('searchCardSection');
+                            if (searchCard) {
+                                const rect = searchCard.getBoundingClientRect();
+                                const offset = window.pageYOffset + rect.top - 58;
+                                window.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+                            }
+                        }, 280);
+                    }
+                });
+            }
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', () => {
+                    if (document.activeElement && document.activeElement.id === 'searchInput' && window.innerWidth <= 860) {
+                        const searchCard = document.getElementById('searchCardSection');
+                        if (searchCard) {
+                            const rect = searchCard.getBoundingClientRect();
+                            const offset = window.pageYOffset + rect.top - 58;
+                            window.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+                        }
                     }
                 });
             }
@@ -693,6 +764,8 @@
                 console.warn('Servidor no disponible para catálogo dinámico, usando catálogo local:', err);
             }
 
+            updateMobileServiceSummary();
+
             // 3. Carga de métricas en vivo
             try {
                 await updateSummary();
@@ -705,8 +778,14 @@
 
         function requireActiveUjier() {
             const select = document.getElementById('serviceUjier');
-            const ujierVal = (activeUjier || select.value || '').trim();
+            const ujierVal = (activeUjier || select?.value || '').trim();
             if (!ujierVal) {
+                const group = document.getElementById('serviceSelectorGroup');
+                if (group) {
+                    group.classList.add('mobile-open');
+                    const btn = document.getElementById('btnToggleMobileService');
+                    if (btn) btn.textContent = 'Cerrar ▴';
+                }
                 const pill = document.getElementById('ujierPillContainer');
                 if (pill) {
                     pill.classList.remove('ujier-required-pulse');
@@ -741,6 +820,7 @@
             if (activeUjier) {
                 localStorage.setItem('ipue_active_ujier', activeUjier);
             }
+            updateMobileServiceSummary();
         }
 
         function onUjierChange() {
@@ -751,6 +831,7 @@
             } else {
                 localStorage.removeItem('ipue_active_ujier');
             }
+            updateMobileServiceSummary();
         }
 
         // GESTIÓN DE UJIERES (MODAL)
@@ -874,6 +955,7 @@
         async function onServiceContextChange() {
             activeDate = document.getElementById('serviceDate').value;
             activeCulto = document.getElementById('serviceCulto').value;
+            updateMobileServiceSummary();
             await updateSummary();
             
             const q = document.getElementById('searchInput').value;
@@ -967,8 +1049,8 @@
                     
                     return `
                         <div class="member-item ${isAttended ? 'attended-item' : ''} ${isSelected}" onclick="selectMemberByIdx(${idx})">
-                            <div>
-                                <div class="member-name">${fullName}</div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div class="member-name" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${fullName}</div>
                                 <div class="member-meta">
                                     <span class="category-tag ${catClass}">
                                         <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};display:inline-block;"></span>
@@ -979,11 +1061,11 @@
                                     <span>· ${m.total_asistencias || 0} asist.</span>
                                 </div>
                             </div>
-                            <div style="display:flex;align-items:center;gap:8px;">
+                            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
                                 ${isAttended 
-                                    ? `<span class="attended-badge">✓ Asistió (${escapeHtml(m.hora_asistencia)})</span>` 
-                                    : `<span style="color:var(--text-muted);font-size:12px;font-weight:600;">Pendiente</span>`}
-                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEditModalByIdx(${idx})" title="Modificar datos o desagregar">✏️ Modificar</button>
+                                    ? `<span class="attended-badge">✓ (${escapeHtml(m.hora_asistencia || 'Presente')})</span>` 
+                                    : `<button type="button" class="btn-quick-mark" onclick="event.stopPropagation(); quickMarkAttendance('${m.id}', this)" title="Marcar asistencia inmediata con 1 toque">✓ Marcar</button>`}
+                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEditModalByIdx(${idx})" title="Modificar datos o desagregar">✏️</button>
                             </div>
                         </div>
                     `;
@@ -1107,6 +1189,50 @@
                 alert('Error al marcar asistencia');
                 btn.disabled = false;
                 btn.textContent = '✓ Registrar Asistencia';
+            }
+        }
+
+        async function quickMarkAttendance(memberId, btn) {
+            if (!requireActiveUjier()) return;
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                const res = await fetch('/api/attendance/mark', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        member_id: memberId,
+                        fecha: activeDate,
+                        culto: activeCulto,
+                        ujier: activeUjier
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'ok' || data.status === 'already') {
+                    const hora = data.record ? data.record.hora : (data.hora || 'Presente');
+                    btn.outerHTML = `<span class="attended-badge">✓ (${escapeHtml(hora)})</span>`;
+                    const m = currentResults.find(x => x.id === memberId);
+                    if (m) {
+                        m.asistio = true;
+                        m.hora_asistencia = hora;
+                        m.total_asistencias = data.total_asistencias;
+                        m.sugerir_promocion = data.sugerir_promocion;
+                        if (selectedMember && selectedMember.id === memberId) {
+                            showDetail(m);
+                        }
+                    }
+                    await updateSummary();
+                } else {
+                    alert(data.error || 'Error al marcar asistencia');
+                    btn.disabled = false;
+                    btn.textContent = origText;
+                }
+            } catch (e) {
+                console.error('Error en marcado rápido:', e);
+                alert('Error al marcar asistencia');
+                btn.disabled = false;
+                btn.textContent = origText;
             }
         }
 
