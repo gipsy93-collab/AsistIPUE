@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analítica & Reportes - IPUE Granada</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <style>
+        .report-layout {
+            max-width: 1280px;
+            margin: 24px auto;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            width: 100%;
+        }
+        .period-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            padding: 14px 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .period-tabs {
+            display: flex;
+            gap: 8px;
+        }
+        .tab-btn {
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active, .tab-btn:hover {
+            background: var(--primary-blue);
+            color: #ffffff;
+            border-color: var(--primary-blue);
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .kpi-card {
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            border-top: 4px solid var(--primary-blue);
+        }
+        .kpi-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .kpi-value {
+            font-size: 30px;
+            font-weight: 800;
+            color: var(--primary-blue-dark);
+            margin: 8px 0;
+        }
+        .kpi-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 850px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .ranking-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .ranking-item-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .progress-track {
+            background: var(--bg-light);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-cyan);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+        .friends-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+            font-size: 14px;
+        }
+        .friends-table th {
+            text-align: left;
+            padding: 10px 14px;
+            background: var(--bg-light);
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .friends-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .btn-whatsapp {
+            background: #25d366;
+            color: white;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-whatsapp:hover {
+            background: #1eb857;
+        }
+        .btn-csv {
+            background: #10b981;
+            color: white;
+            padding: 9px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER INSTITUCIONAL -->
+    <header class="header">
+        <div class="header-left">
+            <div class="header-title-row">
+                <span class="header-title">IPUE GRANADA</span>
+                <span class="header-badge">Analítica & Reportes</span>
+            </div>
+            <div class="header-date">
+                Reportes consolidados, histórico de asistencia y seguimiento
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="nav-links">
+                <a href="/" class="nav-btn">👈 Volver a Registro de Asistencia</a>
+            </div>
+            <div class="logo-container" title="Iglesia Pentecostal Unida en Europa - Granada">
+                <img src="/static/logo_ipue.jpeg" alt="Logo IPUE Granada" class="church-logo">
+            </div>
+        </div>
+    </header>
+
+    <div class="report-layout">
+
+        <!-- BARRA DE FILTROS TEMPORALES Y ACCIONES -->
+        <div class="period-bar">
+            <div class="period-tabs">
+                <button class="tab-btn" onclick="loadPeriod('semana', this)">Esta Semana</button>
+                <button class="tab-btn" onclick="loadPeriod('mes', this)">Este Mes</button>
+                <button class="tab-btn active" onclick="loadPeriod('ano', this)">Este Año</button>
+                <button class="tab-btn" onclick="loadPeriod('historico', this)">Todo el Histórico</button>
+            </div>
+            <div>
+                <a href="/api/reports/export-csv" class="btn-csv" title="Descargar todos los registros detallados">
+                    📥 Descargar CSV / Excel
+                </a>
+            </div>
+        </div>
+
+        <!-- TARJETAS DE MÉTRICAS CLAVE (KPIs) -->
+        <div class="kpi-grid">
+            <div class="kpi-card" style="border-top-color: var(--primary-blue);">
+                <div class="kpi-title">Asistencias Presenciales</div>
+                <div class="kpi-value" id="kpiTotal">0</div>
+                <div class="kpi-sub" id="kpiCultosCount">0 cultos realizados</div>
+            </div>
+            <div class="kpi-card" style="border-top-color: var(--accent-cyan);">
+                <div class="kpi-title">Promedio por Culto</div>
+                <div class="kpi-value" id="kpiPromedio">0</div>
+                <div class="kpi-sub">Feligreses por reunión</div>
+            </div>
+            <div class="kpi-card" style="border-top-color: var(--accent-green);">
+                <div class="kpi-title">Amigos Regulares</div>
+                <div class="kpi-value" id="kpiAmigos">0</div>
+                <div class="kpi-sub">Asistentes en discipulado</div>
+            </div>
+            <div class="kpi-card" style="border-top-color: var(--accent-purple);">
+                <div class="kpi-title">Visitas Nuevas</div>
+                <div class="kpi-value" id="kpiVisitas">0</div>
+                <div class="kpi-sub">Contactos para seguimiento</div>
+            </div>
+            <div class="kpi-card" style="border-top-color: #3b82f6;">
+                <div class="kpi-title">Transmisión Online</div>
+                <div class="kpi-value" id="kpiOnline">0</div>
+                <div class="kpi-sub">En vivo por redes sociales</div>
+            </div>
+        </div>
+
+        <!-- GRÁFICOS Y RANKINGS ANALÍTICOS -->
+        <div class="analytics-grid">
+            <!-- CULTOS MÁS Y MENOS CONCURRIDOS -->
+            <div class="card">
+                <div class="section-title">🏆 Cultos con Mayor Afluencia</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Asistencia acumulada por tipo de culto</div>
+                <div class="ranking-list" id="cultosRanking">
+                    <div style="color:var(--text-muted);font-size:13px;">Cargando estadísticas...</div>
+                </div>
+            </div>
+
+            <!-- DÍAS DE LA SEMANA CON MAYOR ASISTENCIA -->
+            <div class="card">
+                <div class="section-title">📅 Días con Mayor Asistencia</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Comparativa Domingo vs. Jueves vs. Martes vs. Otros</div>
+                <div class="ranking-list" id="diasRanking">
+                    <div style="color:var(--text-muted);font-size:13px;">Cargando días...</div>
+                </div>
+            </div>
+
+            <!-- DESGLOSE GRANULAR POR GÉNERO Y CATEGORÍA -->
+            <div class="card">
+                <div class="section-title">👥 Desglose por Género y Categoría</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Distribución de asistentes en el periodo</div>
+                <div class="ranking-list" id="generoRanking">
+                    <!-- Barras de Hombres, Mujeres, Niños, Amigos, Visitas -->
+                </div>
+            </div>
+
+            <!-- ASISTENCIA POR MESES -->
+            <div class="card">
+                <div class="section-title">📈 Meses de Mayor y Menor Concurrencia</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Comportamiento mensual a lo largo del año</div>
+                <div class="ranking-list" id="mesesRanking">
+                    <!-- Barras de meses -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA DE SEGUIMIENTO PASTORAL A AMIGOS Y VISITAS -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <div class="section-title">🤝 Seguimiento Pastoral: Amigos y Visitas</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Listado de personas en proceso para atención pastoral y WhatsApp directo</div>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="friends-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Categoría</th>
+                            <th>Teléfono / WhatsApp</th>
+                            <th>Cultos Asistidos</th>
+                            <th>Último Culto</th>
+                            <th>Fecha Registro</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="friendsTableBody">
+                        <tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Cargando amigos y visitas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT DEL REPORTE -->
+    <script>
+        let currentPeriod = 'ano';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAnalytics('ano');
+            loadFriends();
+        });
+
+        function loadPeriod(period, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPeriod = period;
+            loadAnalytics(period);
+        }
+
+        async function loadAnalytics(period) {
+            try {
+                const res = await fetch(`/api/reports/analytics?periodo=${period}`);
+                const data = await res.json();
+
+                document.getElementById('kpiTotal').textContent = data.total_asistencias;
+                document.getElementById('kpiCultosCount').textContent = `${data.cultos_realizados} reuniones registradas`;
+                document.getElementById('kpiPromedio').textContent = data.promedio_por_culto;
+                document.getElementById('kpiOnline').textContent = data.total_transmision_online;
+                document.getElementById('kpiAmigos').textContent = data.genero.amigos;
+                document.getElementById('kpiVisitas').textContent = data.genero.visitas;
+
+                // 1. Ranking Cultos
+                const maxCulto = data.cultos_ranking.length > 0 ? Math.max(...data.cultos_ranking.map(c => c.total), 1) : 1;
+                const cultosHtml = data.cultos_ranking.map(c => {
+                    const pct = Math.round((c.total / maxCulto) * 100);
+                    return `
+                        <div class="ranking-item">
+                            <div class="ranking-item-header">
+                                <span>${c.culto}</span>
+                                <span><strong>${c.total}</strong> asistencias</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-bar" style="width: ${pct}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('cultosRanking').innerHTML = cultosHtml || '<div style="color:var(--text-muted);font-size:13px;">Sin datos en este periodo</div>';
+
+                // 2. Ranking Días
+                const maxDia = Math.max(...data.dias_ranking.map(d => d.total), 1);
+                const diasHtml = data.dias_ranking.map(d => {
+                    const pct = Math.round((d.total / maxDia) * 100);
+                    return `
+                        <div class="ranking-item">
+                            <div class="ranking-item-header">
+                                <span>${d.dia}</span>
+                                <span><strong>${d.total}</strong></span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-bar" style="width: ${pct}%; background: var(--primary-blue);"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('diasRanking').innerHTML = diasHtml;
+
+                // 3. Desglose Género / Categoría
+                const g = data.genero;
+                const totalG = g.total || 1;
+                const generoItems = [
+                    { label: 'Hombres', val: g.hombres, color: '#0284c7' },
+                    { label: 'Mujeres', val: g.mujeres, color: '#ec4899' },
+                    { label: 'Niños', val: g.ninos, color: '#f59e0b' },
+                    { label: 'Amigos (Regulares)', val: g.amigos, color: '#10b981' },
+                    { label: 'Visitas (Nuevos)', val: g.visitas, color: '#8b5cf6' }
+                ];
+                const generoHtml = generoItems.map(item => {
+                    const pct = Math.round((item.val / totalG) * 100);
+                    return `
+                        <div class="ranking-item">
+                            <div class="ranking-item-header">
+                                <span>${item.label}</span>
+                                <span><strong>${item.val}</strong> (${pct}%)</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-bar" style="width: ${pct}%; background: ${item.color};"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('generoRanking').innerHTML = generoHtml;
+
+                // 4. Meses
+                const mesesEntries = Object.entries(data.meses_counts);
+                const maxMes = Math.max(...mesesEntries.map(m => m[1]), 1);
+                const mesesHtml = mesesEntries.map(([mes, total]) => {
+                    const pct = Math.round((total / maxMes) * 100);
+                    return `
+                        <div class="ranking-item">
+                            <div class="ranking-item-header">
+                                <span>${mes}</span>
+                                <span><strong>${total}</strong></span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-bar" style="width: ${pct}%; background: var(--accent-gold);"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('mesesRanking').innerHTML = mesesHtml;
+
+            } catch (e) {
+                console.error('Error cargando analítica:', e);
+            }
+        }
+
+        async function loadFriends() {
+            try {
+                const res = await fetch('/api/reports/friends');
+                const list = await res.json();
+                const tbody = document.getElementById('friendsTableBody');
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Aún no se han registrado amigos o visitas.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(f => {
+                    const catClass = f.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita';
+                    return `
+                        <tr>
+                            <td><strong>${f.nombre} ${f.apellidos}</strong></td>
+                            <td><span class="category-tag ${catClass}">${f.categoria}</span></td>
+                            <td>${f.telefono || '<span style="color:var(--text-muted);">Sin teléfono</span>'}</td>
+                            <td><span style="font-weight:700;color:var(--primary-blue);">${f.total_asistencias}</span> culto(s)</td>
+                            <td>${f.ultimo_culto || '—'} <div style="font-size:11px;color:var(--text-muted);">${f.ultima_fecha || ''}</div></td>
+                            <td>${f.fecha_registro || '—'}</td>
+                            <td>
+                                ${f.whatsapp_link 
+                                    ? `<a href="${f.whatsapp_link}" target="_blank" class="btn-whatsapp">💬 Enviar WhatsApp</a>`
+                                    : `<span style="color:var(--text-muted);font-size:12px;">Sin WhatsApp</span>`}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Error cargando amigos y visitas:', e);
+            }
+        }
+    </script>
+</body>
+</html>

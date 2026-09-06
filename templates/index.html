@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Asistencia - IPUE Granada</title>
+    <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+    <!-- HEADER INSTITUCIONAL -->
+    <header class="header">
+        <div class="header-left">
+            <div class="header-title-row">
+                <span class="header-title">IPUE GRANADA</span>
+                <span class="header-badge">Control de Asistencia</span>
+            </div>
+            <div class="header-date" id="currentDateDisplay">
+                📅 Cargando fecha...
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="nav-links">
+                <button type="button" class="nav-btn" onclick="openGlobalManageModal()">✏️ Modificar / Desagregar</button>
+                <a href="/report" class="nav-btn">📊 Analítica & Histórico</a>
+            </div>
+            <div class="logo-container" title="Iglesia Pentecostal Unida en Europa - Granada">
+                <img src="/static/logo_ipue.jpeg" alt="Logo IPUE Granada" class="church-logo">
+            </div>
+        </div>
+    </header>
+
+    <!-- BARRA DE CONFIGURACIÓN DEL CULTO ACTIVO -->
+    <section class="control-bar">
+        <div class="service-selector-group">
+            <!-- FECHA -->
+            <div class="input-pill">
+                <label>Fecha:</label>
+                <input type="date" id="serviceDate" onchange="onServiceContextChange()">
+            </div>
+
+            <!-- CULTO -->
+            <div class="input-pill">
+                <label>Culto:</label>
+                <select id="serviceCulto" onchange="onServiceContextChange()">
+                    <option value="">Cargando cultos...</option>
+                </select>
+            </div>
+
+            <!-- UJIER EN TURNO -->
+            <div class="input-pill">
+                <label>Ujier:</label>
+                <select id="serviceUjier" onchange="onUjierChange()">
+                    <option value="">Seleccionar Ujier...</option>
+                </select>
+                <button type="button" onclick="promptNewUjier()" style="background:none;border:none;color:var(--accent-cyan);cursor:pointer;font-weight:700;font-size:14px;margin-left:6px;" title="Agregar nuevo ujier">+ Nuevo</button>
+            </div>
+
+            <!-- TRANSMISIÓN ONLINE -->
+            <div class="input-pill stream-pill" title="Número de espectadores en YouTube / Facebook Live">
+                <label>📺 En Vivo:</label>
+                <input type="number" id="streamViewers" class="stream-input" min="0" placeholder="0">
+                <button class="btn-stream-save" onclick="saveStreamViewers()" title="Guardar aforo online">Guardar</button>
+            </div>
+        </div>
+
+        <!-- CONTADORES EN VIVO -->
+        <div class="live-metrics-chips">
+            <div class="metric-chip chip-total" id="chipTotal" title="Total Asistentes Presenciales">
+                <span>Presentes:</span> <span id="valTotal">0</span>
+            </div>
+            <div class="metric-chip chip-hermanos" id="chipHermanos" title="Hermanos">
+                <span>Hermanos:</span> <span id="valHermanos">0</span>
+            </div>
+            <div class="metric-chip chip-amigos" id="chipAmigos" title="Amigos Regulares">
+                <span>Amigos:</span> <span id="valAmigos">0</span>
+            </div>
+            <div class="metric-chip chip-visitas" id="chipVisitas" title="Visitas / Nuevos">
+                <span>Visitas:</span> <span id="valVisitas">0</span>
+            </div>
+            <div class="metric-chip chip-ninos" id="chipNinos" title="Niños">
+                <span>Niños:</span> <span id="valNinos">0</span>
+            </div>
+            <div class="metric-chip chip-online" id="chipOnline" title="Espectadores Transmisión">
+                <span>En Línea:</span> <span id="valOnline">0</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main class="main-container">
+        <!-- COLUMNA IZQUIERDA: BÚSQUEDA Y REGISTRO -->
+        <div class="card">
+            <!-- BOTÓN ÚNICO DE REGISTRO NUEVO -->
+            <button class="btn-new-main" onclick="openNewMemberModal()">
+                <span>+</span> Registrar Nuevo
+            </button>
+
+            <!-- BOTÓN DESTACADO PARA APARTADO DE MODIFICACIONES -->
+            <button type="button" class="btn-manage-open" onclick="openGlobalManageModal()">
+                <span>✏️</span> Apartado de Modificaciones / Desagregar Asistente
+            </button>
+
+            <div class="search-header">
+                <span class="section-title">Buscar Asistente</span>
+                <label style="font-size: 11px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <input type="checkbox" id="chkIncludeInactive" onchange="onIncludeInactiveChange()"> Ver desagregados
+                </label>
+            </div>
+
+            <div class="search-input-wrapper">
+                <input type="text" 
+                       id="searchInput" 
+                       class="search-input" 
+                       placeholder="Escribe nombre, apellido o apodo (ej. Manu, Rafa, Yois)..." 
+                       autofocus>
+            </div>
+
+            <div class="search-hint">
+                <span>Tolera faltas de ortografía y apodos comunes</span>
+                <span id="resultsCount"></span>
+            </div>
+
+            <div class="results-scroll" id="resultsList">
+                <div class="empty-state">
+                    Escribe al menos 2 letras para buscar un hermano, amigo, visita o niño.
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: FICHA, ALERTA Y MARCADO -->
+        <div class="card detail-card">
+            <div id="detailEmpty" class="empty-state">
+                <p style="font-size: 16px; margin-bottom: 8px;">👈 Selecciona a un asistente de la lista</p>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Podrás marcar asistencia, cambiar categoría o desagregar.</p>
+                <button type="button" class="btn-manage-open" onclick="openGlobalManageModal()" style="max-width: 340px; margin: 0 auto; background: #eff6ff; border-color: #93c5fd; color: #1d4ed8;">
+                    <span>✏️</span> Abrir Apartado de Modificaciones
+                </button>
+            </div>
+
+            <div id="detailContent" style="display: none; height: 100%; flex-direction: column;">
+                <div class="person-header">
+                    <div>
+                        <div class="person-name-big" id="detName">Nombre de la Persona</div>
+                        <span class="person-category-badge" id="detCategory">Hermano</span>
+                        <span class="category-tag tag-inactivo" id="detInactiveBadge" style="display:none;margin-left:6px;">DESAGREGADO</span>
+                    </div>
+                    <button type="button" class="btn-edit-member" onclick="openEditModal(selectedMember)" title="Modificar categoría, datos o desagregar" style="padding: 8px 14px; font-size: 13px; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        ✏️ Modificar / Desagregar
+                    </button>
+                </div>
+
+                <!-- ALERTA DE REGULARIDAD PARA VISITAS (>= 10 ASISTENCIAS) -->
+                <div class="alert-regular-visitor" id="alertPromote" style="display: none;">
+                    <div class="alert-title">
+                        ⭐ Visita Frecuente Detectada
+                    </div>
+                    <div class="alert-desc">
+                        Esta persona cuenta con <strong id="alertAsistCount">10</strong> asistencias como <strong>Visita</strong>. ¿Deseas pasarla a la categoría <strong>Amigo</strong>?
+                    </div>
+                    <div class="alert-actions">
+                        <button class="btn-alert-yes" onclick="respondPromotion('promote')">✓ Sí, pasar a Amigo</button>
+                        <button class="btn-alert-later" onclick="respondPromotion('remind_10')">Recordar en 10 asistencias más</button>
+                        <button class="btn-alert-no" onclick="respondPromotion('no')">No por ahora</button>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-box">
+                        <div class="info-label">Categoría</div>
+                        <div class="info-val" id="detCatVal">Hermano</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Género</div>
+                        <div class="info-val" id="detGender">Hombre</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Teléfono</div>
+                        <div class="info-val" id="detPhone">—</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Total Histórico Asistencias</div>
+                        <div class="info-val" id="detTotalAsist">0</div>
+                    </div>
+                </div>
+
+                <div class="attendance-action-area">
+                    <button class="btn-mark-big btn-mark-ready" id="btnMarkAttendance" onclick="markSelectedAttendance()">
+                        ✓ Registrar Asistencia
+                    </button>
+                    <button class="btn-unmark" id="btnUnmark" style="display: none;" onclick="unmarkSelectedAttendance()">
+                        Deshacer asistencia de este culto
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL NUEVO ASISTENTE -->
+    <div class="modal-overlay" id="newMemberModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="newModalTitle">+ Registrar Nuevo Asistente</h3>
+                <button onclick="closeNewMemberModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+            <form id="newMemberForm" onsubmit="event.preventDefault(); submitNewMember();">
+                <div class="form-group">
+                    <label>Nombre(s) *</label>
+                    <input type="text" id="newNom" class="form-control" placeholder="Ej. Juan Carlos" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellidos</label>
+                    <input type="text" id="newApe" class="form-control" placeholder="Ej. Gómez Pérez">
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="newCat" class="form-control" onchange="onCategorySelectChange()">
+                        <option value="Visita">Visita (Nuevo / Primera vez)</option>
+                        <option value="Amigo">Amigo (Asistente regular no bautizado)</option>
+                        <option value="Hermano">Hermano (Miembro activo)</option>
+                        <option value="Niño">Niño</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Género</label>
+                    <select id="newGen" class="form-control">
+                        <option value="Hombre">Hombre</option>
+                        <option value="Mujer">Mujer</option>
+                        <option value="Niño">Niño</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono / WhatsApp (Opcional)</label>
+                    <input type="tel" id="newTel" class="form-control" placeholder="Ej. 612345678">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:13px;font-weight:600;color:var(--text-main);">
+                        <input type="checkbox" id="newAutoCheckin" checked style="width:auto;">
+                        Marcar asistencia para el culto activo de inmediato
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-modal-cancel" onclick="closeNewMemberModal()">Cancelar</button>
+                    <button type="submit" class="btn-modal-save">Guardar Registro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE MODIFICACIONES Y GESTIÓN -->
+    <div class="modal-overlay" id="editMemberModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Apartado de Modificaciones / Desagregar</h3>
+                <button onclick="closeEditModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+            <form id="editMemberForm" onsubmit="event.preventDefault(); submitEditMember();">
+                <div class="form-group" id="editSearchGroup" style="background:#eff6ff;padding:10px;border-radius:var(--radius-sm);border:1px solid #bfdbfe;margin-bottom:14px;">
+                    <label style="color:var(--primary-blue-dark);margin-bottom:4px;display:block;">🔍 Buscar a quién deseas modificar o desagregar:</label>
+                    <input type="text" id="modalSearchMember" class="form-control" placeholder="Escribe el nombre de la persona..." oninput="onModalSearchInput(this.value)" autocomplete="off">
+                    <div id="modalSearchResults" style="max-height:140px;overflow-y:auto;margin-top:6px;display:none;background:#ffffff;border:1px solid var(--border-color);border-radius:var(--radius-sm);"></div>
+                </div>
+                <div class="form-group">
+                    <label>Nombre(s) *</label>
+                    <input type="text" id="editNom" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellidos</label>
+                    <input type="text" id="editApe" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="editCat" class="form-control">
+                        <option value="Hermano">Hermano (Miembro bautizado)</option>
+                        <option value="Amigo">Amigo (Asistente regular)</option>
+                        <option value="Visita">Visita (Ocasional / Nuevo)</option>
+                        <option value="Niño">Niño</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Género</label>
+                    <select id="editGen" class="form-control">
+                        <option value="Hombre">Hombre</option>
+                        <option value="Mujer">Mujer</option>
+                        <option value="Niño">Niño</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono / WhatsApp</label>
+                    <input type="tel" id="editTel" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Estado en la Iglesia</label>
+                    <select id="editEstado" class="form-control">
+                        <option value="Activo">Activo (Asiste a la congregación)</option>
+                        <option value="Inactivo">Inactivo / Desagregado (No asiste más)</option>
+                    </select>
+                    <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:4px;">
+                        Si marcas "Inactivo", la persona quedará desagregada y no aparecerá en las búsquedas cotidianas.
+                    </small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-modal-cancel" onclick="closeEditModal()">Cancelar</button>
+                    <button type="submit" class="btn-modal-save">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT DE LA APLICACIÓN -->
+    <script>
+        let selectedMember = null;
+        let searchDebounce = null;
+        let activeDate = '';
+        let activeCulto = '';
+        let activeUjier = '';
+
+        // 1. INICIALIZACIÓN
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initApp();
+            
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                clearTimeout(searchDebounce);
+                searchDebounce = setTimeout(() => doSearch(e.target.value), 180);
+            });
+        });
+
+        async function initApp() {
+            try {
+                const res = await fetch('/api/info');
+                const data = await res.json();
+
+                const d = data.date_info;
+                document.getElementById('currentDateDisplay').innerHTML = `📅 ${d.fecha_larga}`;
+                document.getElementById('serviceDate').value = d.fecha;
+                activeDate = d.fecha;
+
+                const selectCulto = document.getElementById('serviceCulto');
+                selectCulto.innerHTML = '';
+                data.cultos.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = c;
+                    if (c === d.culto_sugerido) opt.selected = true;
+                    selectCulto.appendChild(opt);
+                });
+                activeCulto = selectCulto.value;
+
+                updateUjieresDropdown(data.ujieres || []);
+                await updateSummary();
+            } catch (err) {
+                console.error('Error inicializando app:', err);
+            }
+        }
+
+        function updateUjieresDropdown(list) {
+            const selectUjier = document.getElementById('serviceUjier');
+            const current = selectUjier.value;
+            selectUjier.innerHTML = '<option value="">Seleccionar Ujier...</option>';
+            if (list && list.length > 0) {
+                list.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u;
+                    opt.textContent = u;
+                    if (u === current) opt.selected = true;
+                    selectUjier.appendChild(opt);
+                });
+            }
+            activeUjier = selectUjier.value;
+        }
+
+        function onUjierChange() {
+            activeUjier = document.getElementById('serviceUjier').value;
+        }
+
+        async function promptNewUjier() {
+            const nom = prompt('Escribe el nombre del nuevo Ujier para agregarlo al sistema:');
+            if (!nom || !nom.trim()) return;
+            const res = await fetch('/api/ujieres/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ nombre: nom.trim() })
+            });
+            const data = await res.json();
+            if (data.ujieres) {
+                updateUjieresDropdown(data.ujieres);
+                document.getElementById('serviceUjier').value = nom.trim();
+                activeUjier = nom.trim();
+            }
+        }
+
+        async function onServiceContextChange() {
+            activeDate = document.getElementById('serviceDate').value;
+            activeCulto = document.getElementById('serviceCulto').value;
+            await updateSummary();
+            
+            const q = document.getElementById('searchInput').value;
+            if (q.length >= 2) doSearch(q);
+            if (selectedMember) showDetail(selectedMember);
+        }
+
+        function onIncludeInactiveChange() {
+            const q = document.getElementById('searchInput').value;
+            if (q.length >= 2) doSearch(q);
+        }
+
+        // 2. CONTADORES EN VIVO
+        async function updateSummary() {
+            if (!activeDate || !activeCulto) return;
+            try {
+                const res = await fetch(`/api/attendance/summary?fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto)}`);
+                const data = await res.json();
+                document.getElementById('valTotal').textContent = data.presenciales;
+                document.getElementById('valHermanos').textContent = data.hermanos;
+                document.getElementById('valAmigos').textContent = data.amigos;
+                document.getElementById('valVisitas').textContent = data.visitas;
+                document.getElementById('valNinos').textContent = data.ninos;
+                document.getElementById('valOnline').textContent = data.transmision_online;
+                document.getElementById('streamViewers').value = data.transmision_online || '';
+            } catch (e) {
+                console.error('Error actualizando métricas:', e);
+            }
+        }
+
+        async function saveStreamViewers() {
+            const num = parseInt(document.getElementById('streamViewers').value || 0);
+            await fetch('/api/attendance/stream', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    fecha: activeDate,
+                    culto: activeCulto,
+                    ujier: activeUjier,
+                    espectadores: num
+                })
+            });
+            await updateSummary();
+            alert('Aforo de transmisión online actualizado');
+        }
+
+        // 3. BÚSQUEDA INTELIGENTE
+        async function doSearch(query) {
+            const q = query.trim();
+            const resultsList = document.getElementById('resultsList');
+            const countEl = document.getElementById('resultsCount');
+            const includeInactive = document.getElementById('chkIncludeInactive').checked;
+
+            if (q.length < 2) {
+                resultsList.innerHTML = '<div class="empty-state">Escribe al menos 2 letras para buscar un hermano, amigo, visita o niño.</div>';
+                countEl.textContent = '';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/members/search?q=${encodeURIComponent(q)}&fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto)}&include_inactive=${includeInactive}`);
+                const members = await res.json();
+
+                if (members.length === 0) {
+                    resultsList.innerHTML = '<div class="empty-state">No se encontraron asistentes.<br><br><button class="btn-modal-save" style="width:auto;display:inline-block;padding:8px 16px;" onclick="openNewMemberModal()">+ Registrar Nuevo</button></div>';
+                    countEl.textContent = '0 resultados';
+                    return;
+                }
+
+                countEl.textContent = `${members.length} resultado(s)`;
+                resultsList.innerHTML = members.map(m => {
+                    const isAttended = m.asistio;
+                    const catClass = m.categoria === 'Hermano' ? 'tag-hermano' : (m.categoria === 'Niño' ? 'tag-nino' : (m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
+                    const isSelected = selectedMember && selectedMember.id === m.id ? 'selected' : '';
+                    const isInactive = m.estado === 'Inactivo';
+                    
+                    return `
+                        <div class="member-item ${isAttended ? 'attended-item' : ''} ${isSelected}" onclick='selectMember(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
+                            <div>
+                                <div class="member-name">${m.nombre} ${m.apellidos}</div>
+                                <div class="member-meta">
+                                    <span class="category-tag ${catClass}">${m.categoria}</span>
+                                    ${isInactive ? '<span class="category-tag tag-inactivo">Desagregado</span>' : ''}
+                                    ${m.telefono ? ` · 📞 ${m.telefono}` : ''}
+                                    <span>· ${m.total_asistencias || 0} asist.</span>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                ${isAttended 
+                                    ? `<span class="attended-badge">✓ Asistió (${m.hora_asistencia})</span>` 
+                                    : `<span style="color:var(--text-muted);font-size:12px;">Pendiente</span>`}
+                                <button type="button" class="btn-row-edit" onclick='event.stopPropagation(); openEditModal(${JSON.stringify(m).replace(/'/g, "&apos;")})' title="Modificar datos o desagregar">✏️ Modificar</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Error buscando miembros:', e);
+            }
+        }
+
+        // 4. SELECCIÓN Y FICHA DETALLADA
+        function selectMember(m) {
+            selectedMember = m;
+            showDetail(m);
+            document.querySelectorAll('.member-item').forEach(el => el.classList.remove('selected'));
+        }
+
+        function showDetail(m) {
+            document.getElementById('detailEmpty').style.display = 'none';
+            const content = document.getElementById('detailContent');
+            content.style.display = 'flex';
+
+            document.getElementById('detName').textContent = `${m.nombre} ${m.apellidos}`;
+            const catBadge = document.getElementById('detCategory');
+            catBadge.textContent = m.categoria;
+            const catClass = m.categoria === 'Hermano' ? 'tag-hermano' : (m.categoria === 'Niño' ? 'tag-nino' : (m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
+            catBadge.className = `person-category-badge ${catClass}`;
+
+            document.getElementById('detInactiveBadge').style.display = m.estado === 'Inactivo' ? 'inline-block' : 'none';
+            document.getElementById('detCatVal').textContent = m.categoria;
+            document.getElementById('detGender').textContent = m.genero || 'Hombre';
+            document.getElementById('detPhone').textContent = m.telefono || '—';
+            document.getElementById('detTotalAsist').textContent = `${m.total_asistencias || 0} cultos`;
+
+            // Alerta de visita frecuente
+            const alertBox = document.getElementById('alertPromote');
+            if (m.sugerir_promocion) {
+                document.getElementById('alertAsistCount').textContent = m.total_asistencias;
+                alertBox.style.display = 'block';
+            } else {
+                alertBox.style.display = 'none';
+            }
+
+            const btn = document.getElementById('btnMarkAttendance');
+            const unmarkBtn = document.getElementById('btnUnmark');
+
+            if (m.asistio) {
+                btn.className = 'btn-mark-big btn-mark-done';
+                btn.textContent = `✓ Asistencia Registrada (${m.hora_asistencia})`;
+                btn.disabled = true;
+                unmarkBtn.style.display = 'block';
+            } else {
+                btn.className = 'btn-mark-big btn-mark-ready';
+                btn.textContent = '✓ Registrar Asistencia';
+                btn.disabled = false;
+                unmarkBtn.style.display = 'none';
+            }
+        }
+
+        async function markSelectedAttendance() {
+            if (!selectedMember) return;
+            const btn = document.getElementById('btnMarkAttendance');
+            btn.textContent = 'Registrando...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/attendance/mark', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        member_id: selectedMember.id,
+                        fecha: activeDate,
+                        culto: activeCulto,
+                        ujier: activeUjier
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'ok' || data.status === 'already') {
+                    selectedMember.asistio = true;
+                    selectedMember.hora_asistencia = data.record ? data.record.hora : (data.hora || '');
+                    selectedMember.total_asistencias = data.total_asistencias;
+                    selectedMember.sugerir_promocion = data.sugerir_promocion;
+                    
+                    showDetail(selectedMember);
+                    await updateSummary();
+                    
+                    const q = document.getElementById('searchInput').value;
+                    if (q.length >= 2) doSearch(q);
+                }
+            } catch (e) {
+                alert('Error al marcar asistencia');
+                btn.disabled = false;
+                btn.textContent = '✓ Registrar Asistencia';
+            }
+        }
+
+        async function unmarkSelectedAttendance() {
+            if (!selectedMember || !confirm('¿Deseas anular la marca de asistencia de este culto?')) return;
+            await fetch('/api/attendance/unmark', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    member_id: selectedMember.id,
+                    fecha: activeDate,
+                    culto: activeCulto
+                })
+            });
+            selectedMember.asistio = false;
+            selectedMember.hora_asistencia = '';
+            showDetail(selectedMember);
+            await updateSummary();
+            const q = document.getElementById('searchInput').value;
+            if (q.length >= 2) doSearch(q);
+        }
+
+        // RESPUESTA A LA ALERTA DE PROMOCIÓN DE VISITA
+        async function respondPromotion(action) {
+            if (!selectedMember) return;
+            const res = await fetch('/api/members/promote-visita', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    id: selectedMember.id,
+                    action: action
+                })
+            });
+            const data = await res.json();
+            if (data.member) {
+                selectedMember.categoria = data.member.categoria;
+                selectedMember.sugerir_promocion = false;
+                showDetail(selectedMember);
+                const q = document.getElementById('searchInput').value;
+                if (q.length >= 2) doSearch(q);
+                if (action === 'promote') {
+                    alert(`${selectedMember.nombre} ha sido promovido(a) a Amigo(a) exitosamente.`);
+                }
+            }
+        }
+
+        // 5. MODAL REGISTRO NUEVO
+        function openNewMemberModal(defaultCat = 'Visita') {
+            document.getElementById('newCat').value = defaultCat;
+            document.getElementById('newModalTitle').textContent = '+ Registrar Nuevo';
+            document.getElementById('newMemberModal').style.display = 'flex';
+            document.getElementById('newNom').focus();
+        }
+
+        function closeNewMemberModal() {
+            document.getElementById('newMemberModal').style.display = 'none';
+            document.getElementById('newMemberForm').reset();
+        }
+
+        function onCategorySelectChange() {
+            const cat = document.getElementById('newCat').value;
+            const genSelect = document.getElementById('newGen');
+            if (cat === 'Niño') {
+                genSelect.value = 'Niño';
+            }
+        }
+
+        async function submitNewMember() {
+            const nom = document.getElementById('newNom').value.trim();
+            const ape = document.getElementById('newApe').value.trim();
+            const cat = document.getElementById('newCat').value;
+            const gen = document.getElementById('newGen').value;
+            const tel = document.getElementById('newTel').value.trim();
+            const autoCheck = document.getElementById('newAutoCheckin').checked;
+
+            try {
+                const res = await fetch('/api/members/new', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        nombre: nom,
+                        apellidos: ape,
+                        categoria: cat,
+                        genero: gen,
+                        telefono: tel,
+                        fecha: activeDate,
+                        culto: activeCulto,
+                        ujier: activeUjier,
+                        marcar_asistencia: autoCheck
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    closeNewMemberModal();
+                    await updateSummary();
+                    
+                    document.getElementById('searchInput').value = nom;
+                    await doSearch(nom);
+                    if (data.member) {
+                        data.member.asistio = autoCheck;
+                        data.member.hora_asistencia = new Date().toLocaleTimeString();
+                        data.member.total_asistencias = 1;
+                        selectMember(data.member);
+                    }
+                }
+            } catch (e) {
+                alert('Error al guardar el nuevo asistente');
+            }
+        }
+
+        // 6. MODAL MODIFICACIONES Y DESAGREGACIÓN
+        let memberBeingEdited = null;
+        let modalSearchDebounce = null;
+
+        function openGlobalManageModal() {
+            openEditModal(selectedMember || null);
+        }
+
+        function openEditModal(m = null) {
+            const searchGrp = document.getElementById('editSearchGroup');
+            document.getElementById('modalSearchResults').style.display = 'none';
+            document.getElementById('modalSearchMember').value = '';
+
+            if (m) {
+                populateEditForm(m);
+                searchGrp.style.display = 'none';
+            } else {
+                memberBeingEdited = null;
+                document.getElementById('editMemberForm').reset();
+                searchGrp.style.display = 'block';
+                setTimeout(() => document.getElementById('modalSearchMember').focus(), 150);
+            }
+            document.getElementById('editMemberModal').style.display = 'flex';
+        }
+
+        function populateEditForm(m) {
+            memberBeingEdited = m;
+            document.getElementById('editNom').value = m.nombre || '';
+            document.getElementById('editApe').value = m.apellidos || '';
+            document.getElementById('editCat').value = m.categoria || 'Hermano';
+            document.getElementById('editGen').value = m.genero || 'Hombre';
+            document.getElementById('editTel').value = m.telefono || '';
+            document.getElementById('editEstado').value = m.estado || 'Activo';
+            document.getElementById('editSearchGroup').style.display = 'none';
+        }
+
+        function onModalSearchInput(val) {
+            clearTimeout(modalSearchDebounce);
+            modalSearchDebounce = setTimeout(async () => {
+                const q = val.trim();
+                const resDiv = document.getElementById('modalSearchResults');
+                if (q.length < 2) {
+                    resDiv.style.display = 'none';
+                    return;
+                }
+                const res = await fetch(`/api/members/search?q=${encodeURIComponent(q)}&include_inactive=true`);
+                const list = await res.json();
+                if (list.length === 0) {
+                    resDiv.innerHTML = '<div style="padding:8px;font-size:12px;color:var(--text-muted);">Sin resultados</div>';
+                    resDiv.style.display = 'block';
+                    return;
+                }
+                resDiv.innerHTML = list.map(m => `
+                    <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:13px;display:flex;justify-content:space-between;align-items:center;" onclick='populateEditForm(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
+                        <span><strong>${m.nombre} ${m.apellidos}</strong> (${m.categoria})</span>
+                        <span style="font-size:11px;color:var(--primary-blue);font-weight:700;">Seleccionar 👉</span>
+                    </div>
+                `).join('');
+                resDiv.style.display = 'block';
+            }, 180);
+        }
+
+        function closeEditModal() {
+            document.getElementById('editMemberModal').style.display = 'none';
+            memberBeingEdited = null;
+        }
+
+        async function submitEditMember() {
+            if (!memberBeingEdited) {
+                alert('Por favor selecciona primero a la persona que deseas modificar usando el buscador.');
+                return;
+            }
+            const updated = {
+                id: memberBeingEdited.id,
+                nombre: document.getElementById('editNom').value.trim(),
+                apellidos: document.getElementById('editApe').value.trim(),
+                categoria: document.getElementById('editCat').value,
+                genero: document.getElementById('editGen').value,
+                telefono: document.getElementById('editTel').value.trim(),
+                estado: document.getElementById('editEstado').value
+            };
+
+            try {
+                const res = await fetch('/api/members/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(updated)
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    if (selectedMember && selectedMember.id === memberBeingEdited.id) {
+                        Object.assign(selectedMember, data.member);
+                        showDetail(selectedMember);
+                    }
+                    closeEditModal();
+                    await updateSummary();
+                    const q = document.getElementById('searchInput').value;
+                    if (q.length >= 2) doSearch(q);
+                    alert(`Datos de ${data.member.nombre} actualizados correctamente.`);
+                }
+            } catch (e) {
+                alert('Error al actualizar datos.');
+            }
+        }
+    </script>
+</body>
+</html>
