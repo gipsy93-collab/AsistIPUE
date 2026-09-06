@@ -166,93 +166,159 @@ def get_or_create_ujieres_ws(sh):
             return None
 
 def restore_db_from_sheets(target_db):
-    """Reconstruye atómicamente la base local desde Google Sheets sin duplicaciones."""
+    """Reconstruye atómicamente la base local desde Google Sheets usando batch get (alta velocidad < 1s)."""
     sh = get_sheet()
     if not sh:
         return False
-    
+
+    # 1. Asegurar pestaña Ujieres
+    try:
+        get_or_create_ujieres_ws(sh)
+    except Exception as e:
+        print(f'Asegurar Ujieres ws: {e}')
+
     new_miembros = []
     new_asistencias = []
     new_metricas = {}
     new_ujieres = []
+    ranges = {}
 
     try:
-        ws_m = sh.worksheet('Miembros')
-        for r in ws_m.get_all_records():
-            m_id = str(r.get('ID', '')).strip()
-            if not m_id:
-                continue
-            cat = str(r.get('Categoria', 'Hermano')).strip() or 'Hermano'
-            new_miembros.append({
-                'id': m_id,
-                'categoria': cat,
-                'genero': str(r.get('Genero', 'Hombre')).strip() or 'Hombre',
-                'nombre': str(r.get('Nombre', '')).strip(),
-                'apellidos': str(r.get('Apellidos', '')).strip(),
-                'telefono': str(r.get('Telefono', '')).strip(),
-                'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
-                'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo'
-            })
+        batch = sh.values_batch_get([
+            'Miembros!A1:H',
+            'Asistencia!A1:J',
+            'Cultos_Metricas!A1:D',
+            'Ujieres!A1:C'
+        ])
+        for vr in batch.get('valueRanges', []):
+            r_name = vr.get('range', '').split('!')[0].replace("'", "")
+            ranges[r_name] = vr.get('values', [])
     except Exception as e:
-        print(f'Restore Miembros: {e}')
+        print(f'Error en values_batch_get: {e}')
 
-    try:
-        ws_a = sh.worksheet('Asistencia')
-        for r in ws_a.get_all_records():
-            rec_id = str(r.get('ID_Registro', '')).strip()
-            if not rec_id:
-                continue
-            new_asistencias.append({
-                'id': rec_id,
-                'fecha': str(r.get('Fecha', '')).strip(),
-                'culto': str(r.get('Culto', '')).strip(),
-                'hora': str(r.get('Hora', '')).strip(),
-                'member_id': str(r.get('ID_Miembro', '')).strip(),
-                'nombre_completo': str(r.get('Nombre_Completo', '')).strip(),
-                'categoria': str(r.get('Categoria', '')).strip(),
-                'genero': str(r.get('Genero', '')).strip(),
-                'ujier': str(r.get('Ujier', '')).strip(),
-                'tipo_asistencia': str(r.get('Tipo_Asistencia', 'Presencial')).strip() or 'Presencial'
-            })
-    except Exception as e:
-        print(f'Restore Asistencia: {e}')
+    # Si batch falló, intentar fallback a get_all_records()
+    if not ranges:
+        try:
+            ws_m = sh.worksheet('Miembros')
+            for r in ws_m.get_all_records():
+                m_id = str(r.get('ID', '')).strip()
+                if not m_id:
+                    continue
+                new_miembros.append({
+                    'id': m_id,
+                    'categoria': str(r.get('Categoria', 'Hermano')).strip() or 'Hermano',
+                    'genero': str(r.get('Genero', 'Hombre')).strip() or 'Hombre',
+                    'nombre': str(r.get('Nombre', '')).strip(),
+                    'apellidos': str(r.get('Apellidos', '')).strip(),
+                    'telefono': str(r.get('Telefono', '')).strip(),
+                    'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
+                    'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo'
+                })
+        except Exception as e:
+            print(f'Fallback Miembros: {e}')
+        try:
+            ws_u = get_or_create_ujieres_ws(sh)
+            if ws_u:
+                for r in ws_u.get_all_records():
+                    nom = str(r.get('Nombre_Ujier', '')).strip()
+                    if nom and nom not in new_ujieres:
+                        new_ujieres.append(nom)
+        except Exception as e:
+            print(f'Fallback Ujieres: {e}')
+    else:
+        # Procesar filas descargadas en bloque
+        m_rows = ranges.get('Miembros', [])
+        if len(m_rows) > 1:
+            headers = [h.strip() for h in m_rows[0]]
+            for row in m_rows[1:]:
+                if not row:
+                    continue
+                r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+                m_id = str(r.get('ID', '')).strip()
+                if not m_id:
+                    continue
+                cat = str(r.get('Categoria', 'Hermano')).strip() or 'Hermano'
+                new_miembros.append({
+                    'id': m_id,
+                    'categoria': cat,
+                    'genero': str(r.get('Genero', 'Hombre')).strip() or 'Hombre',
+                    'nombre': str(r.get('Nombre', '')).strip(),
+                    'apellidos': str(r.get('Apellidos', '')).strip(),
+                    'telefono': str(r.get('Telefono', '')).strip(),
+                    'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
+                    'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo'
+                })
 
-    try:
-        ws_c = sh.worksheet('Cultos_Metricas')
-        for r in ws_c.get_all_records():
-            f = str(r.get('Fecha', '')).strip()
-            c = str(r.get('Culto', '')).strip()
-            key = f"{f}_{c}"
-            if key != '_':
-                new_metricas[key] = {
-                    'fecha': f,
-                    'culto': c,
+        a_rows = ranges.get('Asistencia', [])
+        if len(a_rows) > 1:
+            headers = [h.strip() for h in a_rows[0]]
+            for row in a_rows[1:]:
+                if not row:
+                    continue
+                r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+                rec_id = str(r.get('ID_Registro', '')).strip()
+                if not rec_id:
+                    continue
+                new_asistencias.append({
+                    'id': rec_id,
+                    'fecha': str(r.get('Fecha', '')).strip(),
+                    'culto': str(r.get('Culto', '')).strip(),
+                    'hora': str(r.get('Hora', '')).strip(),
+                    'member_id': str(r.get('ID_Miembro', '')).strip(),
+                    'nombre_completo': str(r.get('Nombre_Completo', '')).strip(),
+                    'categoria': str(r.get('Categoria', '')).strip(),
+                    'genero': str(r.get('Genero', '')).strip(),
                     'ujier': str(r.get('Ujier', '')).strip(),
-                    'transmision_online': to_int(r.get('Transmision_Online', 0))
-                }
-    except Exception as e:
-        print(f'Restore Metricas: {e}')
+                    'tipo_asistencia': str(r.get('Tipo_Asistencia', 'Presencial')).strip() or 'Presencial'
+                })
 
-    try:
-        ws_u = get_or_create_ujieres_ws(sh)
-        if ws_u:
-            for r in ws_u.get_all_records():
+        c_rows = ranges.get('Cultos_Metricas', [])
+        if len(c_rows) > 1:
+            headers = [h.strip() for h in c_rows[0]]
+            for row in c_rows[1:]:
+                if not row:
+                    continue
+                r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+                f = str(r.get('Fecha', '')).strip()
+                c = str(r.get('Culto', '')).strip()
+                key = f"{f}_{c}"
+                if key != '_':
+                    new_metricas[key] = {
+                        'fecha': f,
+                        'culto': c,
+                        'ujier': str(r.get('Ujier', '')).strip(),
+                        'transmision_online': to_int(r.get('Transmision_Online', 0))
+                    }
+
+        u_rows = ranges.get('Ujieres', [])
+        if len(u_rows) > 1:
+            headers = [h.strip() for h in u_rows[0]]
+            for row in u_rows[1:]:
+                if not row:
+                    continue
+                r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
                 nom = str(r.get('Nombre_Ujier', '')).strip()
                 if nom and nom not in new_ujieres:
                     new_ujieres.append(nom)
-            new_ujieres.sort()
-    except Exception as e:
-        print(f'Restore Ujieres: {e}')
 
-    if new_miembros or new_asistencias or new_ujieres:
+    # Actualizar target_db asegurando que no se borren datos existentes por fallos parciales
+    updated = False
+    if new_miembros:
         target_db['miembros'] = new_miembros
+        updated = True
+    if new_asistencias:
         target_db['asistencias'] = new_asistencias
+        updated = True
+    if new_metricas:
         target_db['metricas_cultos'] = new_metricas
-        if new_ujieres:
-            target_db['ujieres'] = new_ujieres
-        print(f'Restored desde Sheets: {len(new_miembros)} miembros, {len(new_asistencias)} asistencias, {len(new_ujieres)} ujieres')
-        return True
-    return False
+        updated = True
+    if new_ujieres:
+        new_ujieres.sort()
+        target_db['ujieres'] = new_ujieres
+        updated = True
+
+    print(f'Sync Sheets exitoso: {len(target_db.get("miembros", []))} miembros, {len(target_db.get("asistencias", []))} asistencias, {len(target_db.get("ujieres", []))} ujieres')
+    return updated
 
 LAST_SYNC_TIME = None
 SYNC_INTERVAL_SECONDS = 30
@@ -521,7 +587,10 @@ def report_page():
 # =========================================================
 @app.route('/api/info')
 def api_info():
-    sync_from_sheets_if_needed(force=False)
+    if not db.get('ujieres') or not db.get('miembros'):
+        sync_from_sheets_if_needed(force=True)
+    else:
+        sync_from_sheets_if_needed(force=False)
     sh = get_sheet()
     return jsonify({
         'date_info': get_current_date_info(),
@@ -554,6 +623,10 @@ def api_cultos_search():
 
 @app.route('/api/ujieres')
 def api_get_ujieres():
+    if not db.get('ujieres'):
+        sync_from_sheets_if_needed(force=True)
+    else:
+        sync_from_sheets_if_needed(force=False)
     return jsonify(db.get('ujieres', []))
 
 @app.route('/api/ujieres/add', methods=['POST'])

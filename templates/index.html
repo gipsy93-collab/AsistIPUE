@@ -787,6 +787,21 @@
                 console.warn('Servidor no disponible para catálogo dinámico, usando catálogo local:', err);
             }
 
+            // Fallback de carga directa de Ujieres si vinieron vacíos
+            if (!ujieresList || ujieresList.length === 0) {
+                try {
+                    const resU = await fetch('/api/ujieres');
+                    if (resU.ok) {
+                        const listU = await resU.json();
+                        if (Array.isArray(listU) && listU.length > 0) {
+                            updateUjieresDropdown(listU);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error en fallback ujieres:', e);
+                }
+            }
+
             updateMobileServiceSummary();
 
             // 3. Carga de métricas en vivo
@@ -858,11 +873,23 @@
         }
 
         // GESTIÓN DE UJIERES (MODAL)
-        function openManageUjieresModal() {
+        async function openManageUjieresModal() {
             renderUjieresManagementList();
             document.getElementById('manageUjieresModal').style.display = 'flex';
             document.getElementById('newUjierNameInput').value = '';
             setTimeout(() => document.getElementById('newUjierNameInput').focus(), 150);
+
+            // Refrescar desde servidor al abrir
+            try {
+                const res = await fetch('/api/ujieres');
+                if (res.ok) {
+                    const list = await res.json();
+                    if (Array.isArray(list)) {
+                        updateUjieresDropdown(list);
+                        renderUjieresManagementList();
+                    }
+                }
+            } catch (e) {}
         }
 
         function closeManageUjieresModal() {
