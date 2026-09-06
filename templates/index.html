@@ -214,9 +214,18 @@
                 </div>
 
                 <div class="info-grid">
-                    <div class="info-box">
-                        <div class="info-label">Categoría</div>
-                        <div class="info-val" id="detCatVal">Hermano</div>
+                    <div class="info-box" style="border: 1.5px solid #bae6fd; background: #f0f9ff;">
+                        <div class="info-label" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 700; color: #0369a1;">Categoría (Col. B)</span>
+                            <span id="detCatSaveStatus" style="font-size: 11px; color: #16a34a; font-weight: 800; display: none;">✓ Guardado</span>
+                        </div>
+                        <select id="detCatSelect" class="form-control" style="font-size: 13px; font-weight: 700; padding: 4px 6px; margin-top: 4px; border: 1px solid #7dd3fc; border-radius: 6px; background: #ffffff; cursor: pointer;" onchange="quickUpdateMemberCategory(this.value)">
+                            <option value="Miembro activo">Miembro activo</option>
+                            <option value="Hermano">Hermano</option>
+                            <option value="Amigo">Amigo</option>
+                            <option value="Visita">Visita</option>
+                            <option value="Niño">Niño</option>
+                        </select>
                     </div>
                     <div class="info-box">
                         <div class="info-label">Género</div>
@@ -269,11 +278,12 @@
                     <input type="date" id="newFechaRegistro" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label>Categoría</label>
+                    <label>Categoría / Estado Eclesial (Columna B en Sheets) *</label>
                     <select id="newCat" class="form-control" onchange="onCategorySelectChange()">
-                        <option value="Visita">Visita (Nuevo / Primera vez)</option>
+                        <option value="Miembro activo">Miembro activo (Hermano bautizado)</option>
+                        <option value="Hermano">Hermano</option>
                         <option value="Amigo">Amigo (Asistente regular no bautizado)</option>
-                        <option value="Hermano">Hermano (Miembro activo)</option>
+                        <option value="Visita" selected>Visita (Nuevo / Primera vez)</option>
                         <option value="Niño">Niño</option>
                     </select>
                 </div>
@@ -329,13 +339,17 @@
                     <input type="date" id="editFechaReg" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>Categoría</label>
+                    <label>Categoría / Estado Eclesial (Columna B en Sheets) *</label>
                     <select id="editCat" class="form-control">
-                        <option value="Hermano">Hermano (Miembro bautizado)</option>
+                        <option value="Miembro activo">Miembro activo (Hermano bautizado)</option>
+                        <option value="Hermano">Hermano</option>
                         <option value="Amigo">Amigo (Asistente regular)</option>
                         <option value="Visita">Visita (Ocasional / Nuevo)</option>
                         <option value="Niño">Niño</option>
                     </select>
+                    <small style="color:var(--primary-blue);font-size:11px;display:block;margin-top:2px;">
+                        Impacta directamente el valor de la <strong>Columna B</strong> en la hoja Miembros de Google Sheets.
+                    </small>
                 </div>
                 <div class="form-group">
                     <label>Género</label>
@@ -350,13 +364,13 @@
                     <input type="tel" id="editTel" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>Estado en la Iglesia</label>
+                    <label>Condición en el Listado (Columna H en Sheets)</label>
                     <select id="editEstado" class="form-control">
-                        <option value="Activo">Activo (Asiste a la congregación)</option>
-                        <option value="Inactivo">Inactivo / Desagregado (No asiste más)</option>
+                        <option value="Activo">Activo (Visible en el buscador de la app)</option>
+                        <option value="Inactivo">Inactivo / Desagregado (Ocultar del buscador)</option>
                     </select>
-                    <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:4px;">
-                        Si marcas "Inactivo", la persona quedará desagregada y no aparecerá en las búsquedas cotidianas.
+                    <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:2px;">
+                        Impacta la <strong>Columna H</strong> (Estado). Si marcas "Inactivo", la persona queda archivada.
                     </small>
                 </div>
                 <div class="modal-actions">
@@ -1188,7 +1202,25 @@
             catBadge.className = `person-category-badge ${catClass}`;
 
             document.getElementById('detInactiveBadge').style.display = m.estado === 'Inactivo' ? 'inline-block' : 'none';
-            document.getElementById('detCatVal').textContent = m.categoria;
+            const catSelect = document.getElementById('detCatSelect');
+            if (catSelect) {
+                const targetCat = m.categoria || 'Miembro activo';
+                let found = false;
+                for (let opt of catSelect.options) {
+                    if (opt.value.toLowerCase() === targetCat.toLowerCase()) {
+                        opt.selected = true;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    const newOpt = document.createElement('option');
+                    newOpt.value = targetCat;
+                    newOpt.textContent = targetCat;
+                    newOpt.selected = true;
+                    catSelect.appendChild(newOpt);
+                }
+            }
             document.getElementById('detGender').textContent = m.genero || 'Hombre';
             document.getElementById('detPhone').textContent = m.telefono || '—';
             document.getElementById('detFechaReg').textContent = m.fecha_registro || 'No registrada';
@@ -1216,6 +1248,44 @@
                 btn.textContent = '✓ Registrar Asistencia';
                 btn.disabled = false;
                 unmarkBtn.style.display = 'none';
+            }
+        }
+
+        async function quickUpdateMemberCategory(newCat) {
+            if (!selectedMember) return;
+            const statusSpan = document.getElementById('detCatSaveStatus');
+            if (statusSpan) {
+                statusSpan.style.display = 'inline';
+                statusSpan.textContent = '⏳ Guardando en Sheets...';
+                statusSpan.style.color = 'var(--text-muted)';
+            }
+            try {
+                const res = await fetch('/api/members/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        id: selectedMember.id,
+                        categoria: newCat
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    Object.assign(selectedMember, data.member);
+                    showDetail(selectedMember);
+                    if (statusSpan) {
+                        statusSpan.style.display = 'inline';
+                        statusSpan.textContent = '✓ Guardado en Sheets (Col. B)';
+                        statusSpan.style.color = '#15803d';
+                        setTimeout(() => { if (statusSpan) statusSpan.style.display = 'none'; }, 3000);
+                    }
+                    await updateSummary();
+                    const q = document.getElementById('searchInput').value;
+                    if (q.length >= 2) doSearch(q);
+                } else {
+                    alert(data.error || 'Error al actualizar categoría en Sheets');
+                }
+            } catch (e) {
+                alert('Error de conexión al actualizar categoría');
             }
         }
 
@@ -1453,7 +1523,25 @@
             document.getElementById('editNom').value = m.nombre || '';
             document.getElementById('editApe').value = m.apellidos || '';
             document.getElementById('editFechaReg').value = m.fecha_registro || '';
-            document.getElementById('editCat').value = m.categoria || 'Hermano';
+            
+            const editCatSelect = document.getElementById('editCat');
+            const targetCat = m.categoria || 'Miembro activo';
+            let found = false;
+            for (let opt of editCatSelect.options) {
+                if (opt.value.toLowerCase() === targetCat.toLowerCase()) {
+                    opt.selected = true;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                const newOpt = document.createElement('option');
+                newOpt.value = targetCat;
+                newOpt.textContent = targetCat;
+                newOpt.selected = true;
+                editCatSelect.appendChild(newOpt);
+            }
+
             document.getElementById('editGen').value = m.genero || 'Hombre';
             document.getElementById('editTel').value = m.telefono || '';
             document.getElementById('editEstado').value = m.estado || 'Activo';

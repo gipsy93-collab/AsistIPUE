@@ -441,13 +441,11 @@ def sync_sheets_update_member(m):
     if not sh: return
     try:
         ws = sh.worksheet('Miembros')
-        all_v = ws.get_all_values()
+        col_ids = ws.col_values(1)
+        m_id = str(m.get('id', '')).strip()
         target_row = None
-        for i, r in enumerate(all_v):
-            if i == 0: continue
-            if r and r[0] == m.get('id'):
-                target_row = i + 1
-                break
+        if m_id in col_ids:
+            target_row = col_ids.index(m_id) + 1
         row_vals = [
             m.get('id', ''),
             m.get('categoria', ''),
@@ -459,7 +457,7 @@ def sync_sheets_update_member(m):
             m.get('estado', 'Activo')
         ]
         if target_row:
-            ws.update(f'A{target_row}:H{target_row}', [row_vals])
+            ws.update(values=[row_vals], range_name=f'A{target_row}:H{target_row}')
         else:
             ws.append_row(row_vals)
     except Exception as e:
@@ -747,8 +745,14 @@ def api_members_update():
         member['apellidos'] = data['apellidos'].strip().upper()
     if 'categoria' in data and data['categoria']:
         member['categoria'] = data['categoria'].strip()
+        for a in db.get('asistencias', []):
+            if a.get('member_id') == mid:
+                a['categoria'] = member['categoria']
     if 'genero' in data and data['genero']:
         member['genero'] = data['genero'].strip()
+        for a in db.get('asistencias', []):
+            if a.get('member_id') == mid:
+                a['genero'] = member['genero']
     if 'telefono' in data:
         member['telefono'] = data['telefono'].strip()
     if 'fecha_registro' in data and data['fecha_registro'].strip():
