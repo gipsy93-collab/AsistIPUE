@@ -143,7 +143,18 @@ def load_db():
             print(f'Error leyendo local_db.json: {e}')
 
     db = _empty_db()
-    if os.path.exists(INITIAL_MEMBERS_FILE):
+
+    # Arranque frío en serverless: restaurar SIEMPRE desde Sheets.
+    # Los ujieres y asistencias solo persisten ahí cuando el disco local
+    # es efímero; condicionar la restauración a que la base esté vacía
+    # hacía que initial_members.json la bloqueara y se perdieran.
+    try:
+        restore_db_from_sheets(db)
+    except Exception as e:
+        print(f'No se pudo restaurar desde Sheets: {e}')
+
+    # Semilla de miembros solo si Sheets no aportó ninguno (p.ej. sin credenciales)
+    if not db['miembros'] and os.path.exists(INITIAL_MEMBERS_FILE):
         try:
             with open(INITIAL_MEMBERS_FILE, 'r', encoding='utf-8') as f:
                 members = json.load(f)
@@ -151,13 +162,6 @@ def load_db():
                 db['miembros'] = members
         except Exception as e:
             print(f'Error leyendo initial_members.json: {e}')
-
-    # Arranque frío en serverless: si no hay datos locales, recuperar desde Sheets
-    if not db['miembros'] and not db['asistencias']:
-        try:
-            restore_db_from_sheets(db)
-        except Exception as e:
-            print(f'No se pudo restaurar desde Sheets: {e}')
 
     save_db(db)
     return db
