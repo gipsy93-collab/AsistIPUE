@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe de Asistencia - {{ fecha }} - {{ culto }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 12mm 14mm;
+        }
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            background: #f8fafc;
+            margin: 0;
+            padding: 20px 0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .report-sheet {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 28px 36px;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .header-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #0284c7;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+        }
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .logo-box img {
+            max-height: 65px;
+            max-width: 140px;
+            object-fit: contain;
+        }
+        .church-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .church-sub {
+            font-size: 12px;
+            font-weight: 600;
+            color: #0284c7;
+            margin-top: 2px;
+        }
+        .report-badge {
+            text-align: right;
+        }
+        .report-badge-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0369a1;
+            text-transform: uppercase;
+        }
+        .report-badge-date {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        
+        .service-info-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 16px;
+        }
+        .info-row {
+            display: flex;
+            font-size: 12px;
+        }
+        .info-label {
+            font-weight: 700;
+            color: #475569;
+            width: 130px;
+        }
+        .info-value {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .kpi-box {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+        .kpi-box.highlight {
+            background: #f0f9ff;
+            border-color: #7dd3fc;
+        }
+        .kpi-box-num {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0369a1;
+        }
+        .kpi-box-desc {
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .category-breakdown {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 20px;
+            font-size: 11px;
+            text-align: center;
+        }
+        .cat-item strong {
+            color: #0f172a;
+            font-size: 13px;
+        }
+
+        .table-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 24px;
+        }
+        th, td {
+            padding: 6px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: #f1f5f9;
+            font-weight: 700;
+            color: #334155;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            border-top: 1px solid #cbd5e1;
+        }
+        tr:nth-child(even) td {
+            background: #fafafa;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .tag-hermano { background: #e0f2fe; color: #0369a1; }
+        .tag-amigo { background: #dcfce7; color: #15803d; }
+        .tag-visita { background: #f3e8ff; color: #7e22ce; }
+        .tag-nino { background: #fef3c7; color: #b45309; }
+
+        .signature-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 36px;
+            page-break-inside: avoid;
+        }
+        .signature-box {
+            width: 250px;
+            text-align: center;
+        }
+        .sig-line {
+            border-top: 1.5px solid #334155;
+            margin-bottom: 6px;
+        }
+        .sig-name {
+            font-size: 12px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .sig-role {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .screen-toolbar {
+            max-width: 800px;
+            margin: 0 auto 16px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-print {
+            background: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-close {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+            .screen-toolbar {
+                display: none !important;
+            }
+            .report-sheet {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="screen-toolbar">
+        <button type="button" class="btn-close" onclick="window.close()">✕ Cerrar ventana</button>
+        <button type="button" class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar en PDF</button>
+    </div>
+
+    <div class="report-sheet">
+        <!-- CABECERA CON LOGO OFICIAL -->
+        <div class="header-section">
+            <div class="logo-box">
+                <img src="/api/logo" alt="IPUE Granada">
+                <div>
+                    <div class="church-title">Iglesia Pentecostal Unida de España</div>
+                    <div class="church-sub">Sede Granada · Informe Oficial de Asistencia</div>
+                </div>
+            </div>
+            <div class="report-badge">
+                <div class="report-badge-title">Acta Oficial</div>
+                <div class="report-badge-date">Generado el {{ fecha_larga }}</div>
+            </div>
+        </div>
+
+        <!-- DATOS DEL CULTO -->
+        <div class="service-info-box">
+            <div class="info-row">
+                <span class="info-label">Fecha del Culto:</span>
+                <span class="info-value">{{ fecha_larga }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ujier en Turno:</span>
+                <span class="info-value">{{ ujier or 'No asignado' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Reunión / Culto:</span>
+                <span class="info-value">{{ culto }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Total Registrados:</span>
+                <span class="info-value">{{ presenciales }} personas</span>
+            </div>
+        </div>
+
+        <!-- TARJETAS PRINCIPALES: PRESENCIALES, VIRTUALES Y ALCANCE TOTAL -->
+        <div class="kpi-row">
+            <div class="kpi-box highlight">
+                <div class="kpi-box-num">{{ presenciales }}</div>
+                <div class="kpi-box-desc">Presenciales</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-box-num">{{ online }}</div>
+                <div class="kpi-box-desc">Virtuales (Online)</div>
+            </div>
+            <div class="kpi-box highlight">
+                <div class="kpi-box-num">{{ total_alcance }}</div>
+                <div class="kpi-box-desc">Alcance Total</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-box-num">{{ amigos + visitas }}</div>
+                <div class="kpi-box-desc">Nuevos & Amigos</div>
+            </div>
+        </div>
+
+        <!-- DESGLOSE POR CATEGORÍA -->
+        <div class="category-breakdown">
+            <div class="cat-item">Hermanos: <strong>{{ hermanos }}</strong></div>
+            <div class="cat-item">Amigos: <strong>{{ amigos }}</strong></div>
+            <div class="cat-item">Visitas: <strong>{{ visitas }}</strong></div>
+            <div class="cat-item">Niños: <strong>{{ ninos }}</strong></div>
+        </div>
+
+        <!-- TABLA COMPLETA DE ASISTENTES -->
+        <div class="table-title">
+            <span>Listado de Asistentes</span>
+            <span style="font-size:11px;font-weight:600;color:#64748b;">Total: {{ asistentes|length }}</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 35px;">#</th>
+                    <th>Nombre Completo</th>
+                    <th style="width: 120px;">Categoría</th>
+                    <th style="width: 80px;">Género</th>
+                    <th style="width: 130px;">Culto</th>
+                    <th style="width: 70px;">Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in asistentes %}
+                <tr>
+                    <td style="color:#64748b;font-weight:700;">{{ loop.index }}</td>
+                    <td><strong style="color:#0f172a;">{{ a.nombre_completo }}</strong></td>
+                    <td>
+                        {% if a.categoria == 'Visita' %}
+                            <span class="tag tag-visita">Visita</span>
+                        {% elif a.categoria == 'Amigo' %}
+                            <span class="tag tag-amigo">Amigo</span>
+                        {% elif a.categoria == 'Niño' %}
+                            <span class="tag tag-nino">Niño</span>
+                        {% else %}
+                            <span class="tag tag-hermano">{{ a.categoria or 'Hermano' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ a.genero or '—' }}</td>
+                    <td style="color:#475569;">{{ a.culto }}</td>
+                    <td style="color:#475569;font-weight:600;">{{ a.hora or '—' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">
+                        No se registraron asistencias presenciales para este criterio.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- SECCIÓN OFICIAL DE FIRMA: EXCLUSIVAMENTE DEL UJIER EN TURNO -->
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="sig-line"></div>
+                <div class="sig-name">{{ ujier or 'Ujier en Turno' }}</div>
+                <div class="sig-role">Firma del Ujier Responsable</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                window.print();
+            }, 350);
+        });
+    </script>
+</body>
+</html>

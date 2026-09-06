@@ -134,10 +134,15 @@
             <div class="metric-chip chip-online" id="chipOnline" title="Espectadores Transmisión YouTube">
                 <span class="dot-chip"></span><span>En Línea:</span> <span id="valOnline">0</span>
             </div>
-            <!-- DESCARGAR INFORME POR CULTO -->
-            <button type="button" class="btn-export-culto" onclick="downloadCurrentCultoReport()" title="Descargar informe de asistencia de este culto en Excel / CSV">
-                📥 Descargar Informe
-            </button>
+            <!-- DESCARGAR INFORME POR CULTO (EXCEL Y PDF) -->
+            <div style="display:flex;gap:6px;align-items:center;">
+                <button type="button" class="btn-export-culto" onclick="downloadCurrentCultoReport('excel')" title="Descargar informe en Excel">
+                    📊 Excel
+                </button>
+                <button type="button" class="btn-export-culto" style="background:#dc2626;border-color:#dc2626;color:#ffffff;" onclick="downloadCurrentCultoReport('pdf')" title="Descargar / Imprimir en PDF con membrete oficial y firma del Ujier">
+                    📄 PDF
+                </button>
+            </div>
         </div>
     </section>
 
@@ -439,10 +444,15 @@
             </div>
 
             <!-- ACCIONES DEL MODAL -->
-            <div class="modal-actions" style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center;">
-                <button type="button" class="btn-export-culto" onclick="downloadCurrentCultoReport()">
-                    📥 Descargar Informe CSV / Excel
-                </button>
+            <div class="modal-actions" style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display:flex;gap:6px;">
+                    <button type="button" class="btn-export-culto" onclick="downloadCurrentCultoReport('excel')" title="Descargar informe en Excel">
+                        📊 Descargar Excel
+                    </button>
+                    <button type="button" class="btn-export-culto" style="background:#dc2626;border-color:#dc2626;color:#ffffff;" onclick="downloadCurrentCultoReport('pdf')" title="Descargar / Imprimir informe en PDF con firma del Ujier">
+                        📄 Descargar PDF
+                    </button>
+                </div>
                 <button type="button" class="btn-modal-cancel" onclick="closeAttendeesModal()">
                     Cerrar
                 </button>
@@ -471,15 +481,36 @@
                 <!-- BARRA DE FILTROS TEMPORALES Y ACCIONES -->
                 <div class="period-bar">
                     <div class="period-tabs">
+                        <button class="tab-btn" id="tabBtnDia" onclick="loadPeriodModal('dia', this)">Por Día</button>
                         <button class="tab-btn" onclick="loadPeriodModal('semana', this)">Esta Semana</button>
                         <button class="tab-btn" onclick="loadPeriodModal('mes', this)">Este Mes</button>
                         <button class="tab-btn active" onclick="loadPeriodModal('ano', this)">Este Año</button>
                         <button class="tab-btn" onclick="loadPeriodModal('historico', this)">Todo el Histórico</button>
                     </div>
                     <div>
-                        <a href="/api/reports/export-csv" class="btn-csv" title="Descargar todos los registros detallados">
-                            📥 Descargar CSV / Excel
+                        <a href="/api/reports/export-csv" class="btn-csv" title="Descargar todos los registros históricos detallados en Excel">
+                            📊 Descargar Excel
                         </a>
+                    </div>
+                </div>
+
+                <!-- SELECTOR Y CONTROLES RETROSPECTIVOS PARA DÍA -->
+                <div id="analyticsDayPickerStrip" style="display:none;background:#f8fafc;padding:12px 16px;border-radius:var(--radius-sm);border:1px solid #cbd5e1;margin-bottom:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <span style="font-weight:700;color:var(--text-main);font-size:13px;">📅 Buscar Fecha:</span>
+                        <input type="date" id="analyticsDatePicker" class="form-control" style="width:auto;padding:6px 10px;font-weight:700;font-size:13px;" onchange="onAnalyticsDateChange(this.value)">
+                        <span id="analyticsDayBadge" style="font-size:12px;font-weight:700;color:var(--primary-blue);background:#e0f2fe;padding:4px 10px;border-radius:12px;"></span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <button type="button" class="btn-modal-save" style="padding:7px 14px;font-size:12px;width:auto;" onclick="openDayAttendeesModal()">
+                            👥 Ver Asistentes
+                        </button>
+                        <button type="button" class="btn-csv" style="padding:7px 14px;font-size:12px;" onclick="downloadSelectedDayExcel()">
+                            📊 Descargar Excel
+                        </button>
+                        <button type="button" class="btn-csv" style="padding:7px 14px;font-size:12px;background:#dc2626;border-color:#dc2626;color:#ffffff;" onclick="downloadSelectedDayPDF()">
+                            📄 Descargar PDF
+                        </button>
                     </div>
                 </div>
 
@@ -509,6 +540,11 @@
                         <div class="kpi-title">Transmisión Online</div>
                         <div class="kpi-value" id="kpiModalOnline">0</div>
                         <div class="kpi-sub">En vivo por redes sociales</div>
+                    </div>
+                    <div class="kpi-card" style="border-top-color: #0d9488;">
+                        <div class="kpi-title">Alcance Total</div>
+                        <div class="kpi-value" id="kpiModalAlcance">0</div>
+                        <div class="kpi-sub">Presenciales + Virtuales</div>
                     </div>
                 </div>
 
@@ -1626,7 +1662,7 @@
 
         async function openAttendeesModal(cat = 'Todos') {
             activeAttendeesCategory = cat;
-            document.getElementById('attendeesModalTitle').textContent = `👥 Asistentes: ${activeCulto}`;
+            document.getElementById('attendeesModalTitle').textContent = activeCulto ? `👥 Asistentes: ${activeCulto}` : `👥 Asistentes del Día: ${activeDate}`;
             document.getElementById('attendeesModalSubtitle').textContent = `📅 Fecha: ${activeDate} · Filtrando categoría: ${cat}`;
             document.getElementById('attendeesListModal').style.display = 'flex';
             document.getElementById('filterAttendeesInput').value = '';
@@ -1636,10 +1672,10 @@
                 btn.classList.toggle('active', btn.getAttribute('data-cat') === cat);
             });
 
-            document.getElementById('attendeesListContent').innerHTML = '<div class="empty-state">Consultando asistentes de este culto...</div>';
+            document.getElementById('attendeesListContent').innerHTML = '<div class="empty-state">Consultando asistentes...</div>';
 
             try {
-                const res = await fetch(`/api/attendance/current-list?fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto)}`);
+                const res = await fetch(`/api/attendance/current-list?fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto || 'Todos')}`);
                 const data = await res.json();
                 allCurrentAttendees = data.attendees || [];
 
@@ -1755,12 +1791,44 @@
             }
         }
 
-        function downloadCurrentCultoReport() {
-            if (!activeDate || !activeCulto) {
-                alert('Selecciona fecha y culto para generar el informe.');
+        function downloadCurrentCultoReport(format = 'excel') {
+            if (!activeDate) {
+                alert('Selecciona una fecha para generar el informe.');
                 return;
             }
-            window.open(`/api/reports/export-culto-csv?fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto)}`, '_blank');
+            if (format === 'pdf') {
+                const url = `/report/culto-print?fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto || '')}`;
+                window.open(url, '_blank');
+            } else {
+                const url = `/api/reports/export-culto-csv?fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto || '')}`;
+                window.open(url, '_blank');
+            }
+        }
+
+        let analyticsSelectedDate = '';
+
+        function onAnalyticsDateChange(val) {
+            analyticsSelectedDate = val;
+            const b = document.getElementById('analyticsDayBadge');
+            if (b) b.textContent = val ? `Día: ${val}` : '';
+            loadPeriodModal('dia');
+        }
+
+        function openDayAttendeesModal() {
+            const d = analyticsSelectedDate || document.getElementById('analyticsDatePicker')?.value || activeDate || deviceToday();
+            activeDate = d;
+            activeCulto = '';
+            openAttendeesModal('Todos');
+        }
+
+        function downloadSelectedDayExcel() {
+            const d = analyticsSelectedDate || document.getElementById('analyticsDatePicker')?.value || activeDate || deviceToday();
+            window.open(`/api/reports/export-culto-csv?fecha=${encodeURIComponent(d)}&culto=Todos`, '_blank');
+        }
+
+        function downloadSelectedDayPDF() {
+            const d = analyticsSelectedDate || document.getElementById('analyticsDatePicker')?.value || activeDate || deviceToday();
+            window.open(`/report/culto-print?fecha=${encodeURIComponent(d)}&culto=Todos`, '_blank');
         }
 
         // =========================================================
@@ -1784,8 +1852,29 @@
                 btn.classList.add('active');
             }
             currentModalPeriod = period;
+
+            const dayStrip = document.getElementById('analyticsDayPickerStrip');
+            let url = `/api/reports/analytics?periodo=${period}`;
+
+            if (period === 'dia') {
+                if (dayStrip) dayStrip.style.display = 'flex';
+                const picker = document.getElementById('analyticsDatePicker');
+                if (picker) {
+                    if (!picker.value) {
+                        picker.value = activeDate || deviceToday();
+                    }
+                    analyticsSelectedDate = picker.value;
+                    const b = document.getElementById('analyticsDayBadge');
+                    if (b) b.textContent = `Día: ${picker.value}`;
+                }
+                const d = analyticsSelectedDate || activeDate || deviceToday();
+                url = `/api/reports/analytics?periodo=dia&fecha=${encodeURIComponent(d)}`;
+            } else {
+                if (dayStrip) dayStrip.style.display = 'none';
+            }
+
             try {
-                const res = await fetch(`/api/reports/analytics?periodo=${period}`);
+                const res = await fetch(url);
                 const data = await res.json();
                 document.getElementById('kpiModalTotal').textContent = data.total_asistencias;
                 document.getElementById('kpiModalCultosCount').textContent = `${data.cultos_realizados} reuniones registradas`;
@@ -1793,6 +1882,8 @@
                 document.getElementById('kpiModalOnline').textContent = data.total_transmision_online;
                 document.getElementById('kpiModalAmigos').textContent = data.genero.amigos;
                 document.getElementById('kpiModalVisitas').textContent = data.genero.visitas;
+                const alcEl = document.getElementById('kpiModalAlcance');
+                if (alcEl) alcEl.textContent = data.total_alcance ?? (data.total_asistencias + data.total_transmision_online);
 
                 // 1. Ranking Cultos
                 const maxCulto = data.cultos_ranking.length > 0 ? Math.max(...data.cultos_ranking.map(c => c.total), 1) : 1;

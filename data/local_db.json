@@ -1382,7 +1382,7 @@
     },
     {
       "id": "ZTEST",
-      "categoria": "Amigo",
+      "categoria": "Visita",
       "genero": "Hombre",
       "nombre": "PRUEBA",
       "apellidos": "SEGUIMIENTO",
@@ -1391,6 +1391,18 @@
       "hora_registro": "",
       "estado": "Activo",
       "total_asistencias": 0
+    },
+    {
+      "id": "V003",
+      "categoria": "Amigo",
+      "genero": "Hombre",
+      "nombre": "PRUEBA",
+      "apellidos": "UNO",
+      "telefono": "",
+      "fecha_registro": "2026-09-06",
+      "hora_registro": "20:11:29",
+      "estado": "Inactivo",
+      "total_asistencias": 1
     }
   ],
   "asistencias": [
@@ -1477,6 +1489,18 @@
       "genero": "Hombre",
       "ujier": "",
       "tipo_asistencia": "Presencial"
+    },
+    {
+      "id": "A20260906201129B5CE",
+      "fecha": "2026-09-06",
+      "culto": "Escuela Dominical",
+      "hora": "20:11:29",
+      "member_id": "V003",
+      "nombre_completo": "PRUEBA UNO",
+      "categoria": "Visita",
+      "genero": "Hombre",
+      "ujier": "PRUEBA 1",
+      "tipo_asistencia": "Presencial"
     }
   ],
   "metricas_cultos": {
@@ -1501,6 +1525,7 @@
   },
   "ujieres": [
     "Claudia Ortiz",
-    "Martín Pérez"
+    "Martín Pérez",
+    "Prueba 1"
   ]
 }
