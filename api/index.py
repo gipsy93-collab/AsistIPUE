@@ -172,8 +172,8 @@ def get_or_create_visitas_ws(sh):
         return sh.worksheet('Visitas')
     except Exception:
         try:
-            ws = sh.add_worksheet('Visitas', 1000, 8)
-            ws.append_row(['ID', 'Fecha_Registro', 'Hora_Registro', 'Nombre', 'Apellidos', 'Telefono', 'Genero', 'Total_Asistencias'])
+            ws = sh.add_worksheet('Visitas', 1000, 9)
+            ws.append_row(['ID', 'Fecha_Registro', 'Hora_Registro', 'Nombre', 'Apellidos', 'Telefono', 'Genero', 'Total_Asistencias', 'Estado'])
             return ws
         except Exception as e:
             print(f'Error creando hoja Visitas en Sheets: {e}')
@@ -186,8 +186,8 @@ def get_or_create_amigos_ws(sh):
         return sh.worksheet('Amigos')
     except Exception:
         try:
-            ws = sh.add_worksheet('Amigos', 1000, 8)
-            ws.append_row(['ID', 'Fecha_Registro', 'Hora_Registro', 'Nombre', 'Apellidos', 'Telefono', 'Genero', 'Total_Asistencias'])
+            ws = sh.add_worksheet('Amigos', 1000, 9)
+            ws.append_row(['ID', 'Fecha_Registro', 'Hora_Registro', 'Nombre', 'Apellidos', 'Telefono', 'Genero', 'Total_Asistencias', 'Estado'])
             return ws
         except Exception as e:
             print(f'Error creando hoja Amigos en Sheets: {e}')
@@ -217,8 +217,8 @@ def restore_db_from_sheets(target_db):
     try:
         batch = sh.values_batch_get([
             'Miembros!A1:H',
-            'Visitas!A1:H',
-            'Amigos!A1:H',
+            'Visitas!A1:I',
+            'Amigos!A1:I',
             'Asistencia!A1:J',
             'Cultos_Metricas!A1:D',
             'Ujieres!A1:C'
@@ -256,7 +256,7 @@ def restore_db_from_sheets(target_db):
                 'total_asistencias': 0
             })
 
-    # 2. Visitas (Hoja Visitas: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias)
+    # 2. Visitas (Hoja Visitas: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias, Estado)
     v_rows = ranges.get('Visitas', [])
     if len(v_rows) > 1:
         headers = [h.strip() for h in v_rows[0]]
@@ -277,11 +277,11 @@ def restore_db_from_sheets(target_db):
                 'telefono': str(r.get('Telefono', '')).strip(),
                 'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
                 'hora_registro': str(r.get('Hora_Registro', '')).strip(),
-                'estado': 'Activo',
+                'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo',
                 'total_asistencias': to_int(r.get('Total_Asistencias', 0))
             })
 
-    # 3. Amigos (Hoja Amigos: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias)
+    # 3. Amigos (Hoja Amigos: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias, Estado)
     a_m_rows = ranges.get('Amigos', [])
     if len(a_m_rows) > 1:
         headers = [h.strip() for h in a_m_rows[0]]
@@ -302,7 +302,7 @@ def restore_db_from_sheets(target_db):
                 'telefono': str(r.get('Telefono', '')).strip(),
                 'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
                 'hora_registro': str(r.get('Hora_Registro', '')).strip(),
-                'estado': 'Activo',
+                'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo',
                 'total_asistencias': to_int(r.get('Total_Asistencias', 0))
             })
 
@@ -494,7 +494,8 @@ def sync_sheets_write_member(m):
                     m.get('apellidos', ''),
                     m.get('telefono', ''),
                     m.get('genero', 'Hombre'),
-                    m.get('total_asistencias', 0)
+                    m.get('total_asistencias', 0),
+                    m.get('estado', 'Activo')
                 ])
         elif cat == 'Amigo':
             ws = get_or_create_amigos_ws(sh)
@@ -507,7 +508,8 @@ def sync_sheets_write_member(m):
                     m.get('apellidos', ''),
                     m.get('telefono', ''),
                     m.get('genero', 'Hombre'),
-                    m.get('total_asistencias', 0)
+                    m.get('total_asistencias', 0),
+                    m.get('estado', 'Activo')
                 ])
         else:
             ws = sh.worksheet('Miembros')
@@ -556,8 +558,10 @@ def sync_sheets_update_member(m):
                     m.get('apellidos', ''),
                     m.get('telefono', ''),
                     m.get('genero', 'Hombre'),
-                    m.get('total_asistencias', 0)
+                    m.get('total_asistencias', 0),
+                    m.get('estado', 'Activo')
                 ]
+                found_ws.update(values=[row_vals], range_name=f'A{found_row}:I{found_row}')
             else:
                 row_vals = [
                     m.get('id', ''),
@@ -569,7 +573,7 @@ def sync_sheets_update_member(m):
                     m.get('fecha_registro', ''),
                     m.get('estado', 'Activo')
                 ]
-            found_ws.update(values=[row_vals], range_name=f'A{found_row}:H{found_row}')
+                found_ws.update(values=[row_vals], range_name=f'A{found_row}:H{found_row}')
         else:
             if found_ws and found_row:
                 try:
@@ -838,6 +842,9 @@ def api_members_search():
                 sugerir_promo = True
         m_copy['sugerir_promocion'] = sugerir_promo
         
+        cat = m.get('categoria', 'Hermano')
+        m_copy['sheet_name'] = 'Visitas' if cat == 'Visita' else ('Amigos' if cat == 'Amigo' else 'Miembros')
+        
         results.append(m_copy)
         
     return jsonify(results)
@@ -877,6 +884,8 @@ def api_members_update():
     if 'estado' in data and data['estado']:
         member['estado'] = data['estado'].strip() # 'Activo' o 'Inactivo'
         
+    cat = member.get('categoria', 'Hermano')
+    member['sheet_name'] = 'Visitas' if cat == 'Visita' else ('Amigos' if cat == 'Amigo' else 'Miembros')
     save_db(db)
     sync_sheets_update_member(member)
     return jsonify({'status': 'ok', 'member': member})
@@ -1144,6 +1153,7 @@ def api_members_new():
         'fecha_registro': fecha_reg,
         'hora_registro': hora_reg,
         'estado': 'Activo',
+        'sheet_name': 'Visitas' if categoria == 'Visita' else ('Amigos' if categoria == 'Amigo' else 'Miembros'),
         'total_asistencias': 1 if (marcar_asistencia and culto) else 0
     }
     db['miembros'].append(new_m)

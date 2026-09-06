@@ -184,8 +184,13 @@
                         <div class="person-avatar" id="detAvatar">👤</div>
                         <div>
                             <div class="person-name-big" id="detName">Nombre de la Persona</div>
-                            <span class="person-category-badge" id="detCategory">Hermano</span>
-                            <span class="category-tag tag-inactivo" id="detInactiveBadge" style="display:none;margin-left:6px;">DESAGREGADO</span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 3px;">
+                                <span class="person-category-badge" id="detCategory">Hermano</span>
+                                <span id="detSheetLocationBadge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; display: inline-flex; align-items: center; gap: 4px;">
+                                    📍 Hoja: <strong id="detSheetLocationText">Miembros</strong>
+                                </span>
+                                <span class="category-tag tag-inactivo" id="detInactiveBadge" style="display:none;">DESAGREGADO</span>
+                            </div>
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -216,7 +221,7 @@
                 <div class="info-grid">
                     <div class="info-box" style="border: 1.5px solid #bae6fd; background: #f0f9ff;">
                         <div class="info-label" style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 700; color: #0369a1;">Categoría (Col. B)</span>
+                            <span style="font-weight: 700; color: #0369a1;">Categoría Eclesial</span>
                             <span id="detCatSaveStatus" style="font-size: 11px; color: #16a34a; font-weight: 800; display: none;">✓ Guardado</span>
                         </div>
                         <select id="detCatSelect" class="form-control" style="font-size: 13px; font-weight: 700; padding: 4px 6px; margin-top: 4px; border: 1px solid #7dd3fc; border-radius: 6px; background: #ffffff; cursor: pointer;" onchange="quickUpdateMemberCategory(this.value)">
@@ -274,7 +279,7 @@
                     <input type="text" id="newApe" class="form-control" placeholder="Ej. Gómez Pérez">
                 </div>
                 <div class="form-group">
-                    <label>Categoría / Estado Eclesial (Columna B en Sheets) *</label>
+                    <label>Categoría / Estado Eclesial *</label>
                     <select id="newCat" class="form-control" onchange="onCategorySelectChange()">
                         <option value="Visita" selected>Visita (Hoja Visitas - Nuevo / Primera vez)</option>
                         <option value="Amigo">Amigo (Hoja Amigos - Asistente regular no bautizado)</option>
@@ -322,6 +327,13 @@
                     <input type="text" id="modalSearchMember" class="form-control" placeholder="Escribe el nombre de la persona..." oninput="onModalSearchInput(this.value)" autocomplete="off">
                     <div id="modalSearchResults" style="max-height:140px;overflow-y:auto;margin-top:6px;display:none;background:#ffffff;border:1px solid var(--border-color);border-radius:var(--radius-sm);"></div>
                 </div>
+
+                <!-- BANNER DINÁMICO DE HOJA ASOCIADA EN GOOGLE SHEETS -->
+                <div id="editTargetSheetBanner" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;margin-bottom:12px;align-items:center;justify-content:space-between;">
+                    <div>📍 Base de datos Sheets: Guardado en <strong id="editTargetSheetName" style="font-size:13px;text-transform:uppercase;">Hoja Miembros</strong></div>
+                    <span id="editTargetSheetIdBadge" style="font-size:11px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:4px;font-weight:700;"></span>
+                </div>
+
                 <div class="form-group">
                     <label>Nombre(s) *</label>
                     <input type="text" id="editNom" class="form-control" required>
@@ -331,7 +343,7 @@
                     <input type="text" id="editApe" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>Categoría / Estado Eclesial (Columna B en Sheets) *</label>
+                    <label>Categoría / Estado Eclesial <span id="editCatSheetInfo" style="font-weight:600;color:var(--primary-blue-dark);font-size:12px;">(Hoja Miembros)</span> *</label>
                     <select id="editCat" class="form-control">
                         <option value="Miembro activo">Miembro activo (Hermano bautizado)</option>
                         <option value="Hermano">Hermano</option>
@@ -339,7 +351,7 @@
                         <option value="Visita">Visita (Ocasional / Nuevo)</option>
                         <option value="Niño">Niño</option>
                     </select>
-                    <small style="color:var(--primary-blue);font-size:11px;display:block;margin-top:2px;">
+                    <small id="editCatHelpText" style="color:var(--primary-blue);font-size:11px;display:block;margin-top:2px;">
                         Impacta directamente el valor de la <strong>Columna B</strong> en la hoja Miembros de Google Sheets.
                     </small>
                 </div>
@@ -356,13 +368,13 @@
                     <input type="tel" id="editTel" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>Condición en el Listado (Columna H en Sheets)</label>
+                    <label>Condición en el Listado (<span id="editEstadoSheetTarget" style="font-weight:700;color:var(--primary-blue-dark);">Hoja Miembros</span>)</label>
                     <select id="editEstado" class="form-control">
                         <option value="Activo">Activo (Visible en el buscador de la app)</option>
                         <option value="Inactivo">Inactivo / Desagregado (Ocultar del buscador)</option>
                     </select>
-                    <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:2px;">
-                        Impacta la <strong>Columna H</strong> (Estado). Si marcas "Inactivo", la persona queda archivada.
+                    <small id="editEstadoHelpText" style="color:var(--text-muted);font-size:11px;display:block;margin-top:2px;">
+                        Impacta la columna <strong>Estado</strong> en la hoja correspondiente (<span id="editEstadoColTarget">Columna H en Miembros</span>). Si marcas "Inactivo", la persona queda archivada y oculta del buscador.
                     </small>
                 </div>
                 <div class="modal-actions">
@@ -626,6 +638,15 @@
             container.classList.remove('animate-sweep');
             void container.offsetWidth; // reflow
             container.classList.add('animate-sweep');
+        }
+
+        function getSheetNameForMember(m) {
+            if (!m) return 'Miembros';
+            if (m.sheet_name) return m.sheet_name;
+            const c = (m.categoria || '').trim().toLowerCase();
+            if (c === 'visita') return 'Visitas';
+            if (c === 'amigo') return 'Amigos';
+            return 'Miembros';
         }
 
         function isHermanoCategory(cat) {
@@ -1193,6 +1214,10 @@
             const catClass = isHermanoCategory(m.categoria) ? 'tag-hermano' : (m.categoria === 'Niño' ? 'tag-nino' : (m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
             catBadge.className = `person-category-badge ${catClass}`;
 
+            const sName = getSheetNameForMember(m);
+            const detSheetText = document.getElementById('detSheetLocationText');
+            if (detSheetText) detSheetText.textContent = sName;
+
             document.getElementById('detInactiveBadge').style.display = m.estado === 'Inactivo' ? 'inline-block' : 'none';
             const catSelect = document.getElementById('detCatSelect');
             if (catSelect) {
@@ -1504,6 +1529,14 @@
             } else {
                 memberBeingEdited = null;
                 document.getElementById('editMemberForm').reset();
+                const banner = document.getElementById('editTargetSheetBanner');
+                if (banner) banner.style.display = 'none';
+                const catSheetInfo = document.getElementById('editCatSheetInfo');
+                if (catSheetInfo) catSheetInfo.textContent = '';
+                const estadoSheet = document.getElementById('editEstadoSheetTarget');
+                if (estadoSheet) estadoSheet.textContent = 'Hoja correspondiente';
+                const estadoCol = document.getElementById('editEstadoColTarget');
+                if (estadoCol) estadoCol.textContent = 'Columna Estado';
                 searchGrp.style.display = 'block';
                 setTimeout(() => document.getElementById('modalSearchMember').focus(), 150);
             }
@@ -1537,6 +1570,32 @@
             document.getElementById('editTel').value = m.telefono || '';
             document.getElementById('editEstado').value = m.estado || 'Activo';
             document.getElementById('editSearchGroup').style.display = 'none';
+
+            // Detección y presentación dinámica de la hoja en Sheets
+            const sName = getSheetNameForMember(m);
+            const banner = document.getElementById('editTargetSheetBanner');
+            if (banner) {
+                banner.style.display = 'flex';
+                document.getElementById('editTargetSheetName').textContent = `Hoja ${sName}`;
+                const idBadge = document.getElementById('editTargetSheetIdBadge');
+                if (idBadge) idBadge.textContent = `ID: ${m.id || '—'}`;
+            }
+            const catSheetInfo = document.getElementById('editCatSheetInfo');
+            if (catSheetInfo) catSheetInfo.textContent = `(Hoja ${sName})`;
+            const catHelp = document.getElementById('editCatHelpText');
+            if (catHelp) {
+                if (sName === 'Miembros') {
+                    catHelp.innerHTML = 'Impacta directamente el valor de la <strong>Columna B</strong> en la hoja <strong>Miembros</strong>.';
+                } else {
+                    catHelp.innerHTML = `Registrado actualmente en la hoja <strong>${sName}</strong>. Si cambias la categoría a Hermano o Miembro activo, el sistema lo moverá automáticamente a la hoja Miembros.`;
+                }
+            }
+            const estadoSheet = document.getElementById('editEstadoSheetTarget');
+            if (estadoSheet) estadoSheet.textContent = `Hoja ${sName}`;
+            const estadoCol = document.getElementById('editEstadoColTarget');
+            if (estadoCol) {
+                estadoCol.textContent = (sName === 'Miembros') ? 'Columna H en Miembros' : 'Columna I en ' + sName;
+            }
         }
 
         function onModalSearchInput(val) {
