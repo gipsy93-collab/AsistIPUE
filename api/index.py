@@ -878,7 +878,8 @@ def api_reports_analytics():
         },
         'cultos_ranking': cultos_ranking,
         'dias_ranking': dias_ranking,
-        'meses_counts': meses_counts
+        'meses_counts': meses_counts,
+        'meses_ranking': sorted([{'mes': k, 'total': v} for k, v in meses_counts.items()], key=lambda x: x['total'], reverse=True)
     })
 
 @app.route('/api/reports/friends')
@@ -906,6 +907,7 @@ def api_reports_friends():
             'total_asistencias': len(asistencias_p),
             'ultimo_culto': asistencias_p[-1].get('culto', '') if asistencias_p else '',
             'ultima_fecha': fechas[-1] if fechas else '',
+            'ultima_asistencia': fechas[-1] if fechas else '',
             'estado': p.get('estado', 'Activo')
         })
         
