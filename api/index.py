@@ -3,12 +3,24 @@ import sys
 import json
 import csv
 import io
-from datetime import datetime, date
-from flask import Flask, render_template, request, jsonify, Response
+import uuid
+from datetime import datetime, date, timedelta
+from flask import Flask, render_template, request, jsonify, Response, send_from_directory
 import traceback
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from search_engine import search_culto, search_members_smart, CULTOS_CATALOG
+from search_engine import search_culto, search_members_smart, CULTOS_CATALOG, normalize_str
+
+def now_local():
+    """Hora del reloj local del servidor (sin zona horaria forzada)."""
+    return datetime.now()
+
+def to_int(value, default=0):
+    """Convierte a entero de forma tolerante (evita 500 con entrada no numérica)."""
+    try:
+        return int(float(str(value).strip()))
+    except (ValueError, TypeError):
+        return default
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates')
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static')
@@ -19,22 +31,48 @@ class VercelPathFix:
     def __init__(self, wsgi_app):
         self.wsgi_app = wsgi_app
     def __call__(self, environ, start_response):
-        path = environ.get('PATH_INFO', '')
-        for prefix in ['/api/index.py', '/api/index']:
-            if path.startswith(prefix):
-                new_path = path[len(prefix):]
-                environ['PATH_INFO'] = new_path if new_path.startswith('/') else ('/' + new_path)
-                break
+        matched = environ.get('HTTP_X_MATCHED_PATH') or environ.get('HTTP_X_FORWARDED_URI')
+        if matched and not matched.startswith('/api/index'):
+            environ['PATH_INFO'] = matched
+        else:
+            path = environ.get('PATH_INFO', '')
+            for prefix in ['/api/index.py', '/api/index']:
+                if path.startswith(prefix):
+                    new_path = path[len(prefix):]
+                    environ['PATH_INFO'] = new_path if new_path.startswith('/') else ('/' + new_path)
+                    break
         return self.wsgi_app(environ, start_response)
 
 app.wsgi_app = VercelPathFix(app.wsgi_app)
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# En serverless (Vercel) el directorio del proyecto es de solo lectura:
+# la base local debe vivir en /tmp; en desarrollo se usa data/ del proyecto.
+if os.environ.get('DATA_DIR'):
+    DATA_DIR = os.environ['DATA_DIR']
+elif os.environ.get('VERCEL') or not os.access(PROJECT_DIR, os.W_OK):
+    DATA_DIR = os.path.join('/tmp', 'asisipue_data')
+else:
+    DATA_DIR = os.path.join(PROJECT_DIR, 'data')
 os.makedirs(DATA_DIR, exist_ok=True)
 LOCAL_DB_FILE = os.path.join(DATA_DIR, 'local_db.json')
-INITIAL_MEMBERS_FILE = os.path.join(DATA_DIR, 'initial_members.json')
+INITIAL_MEMBERS_FILE = os.path.join(PROJECT_DIR, 'data', 'initial_members.json')
 
 SHEET_ID = os.environ.get('SHEET_ID', '').strip()
+
+def resolve_sheet_id():
+    """Devuelve el ID de hoja activo: variable de entorno > data/sheet_id.txt del proyecto."""
+    if SHEET_ID:
+        return SHEET_ID
+    id_file = os.path.join(PROJECT_DIR, 'data', 'sheet_id.txt')
+    if os.path.exists(id_file):
+        try:
+            with open(id_file, 'r', encoding='utf-8') as f:
+                return f.read().strip()
+        except Exception:
+            pass
+    return ''
 
 def get_gc():
     try:
@@ -61,10 +99,7 @@ def get_gc():
 def get_sheet():
     global SHEET_ID
     if not SHEET_ID:
-        id_file = os.path.join(DATA_DIR, 'sheet_id.txt')
-        if os.path.exists(id_file):
-            with open(id_file, 'r', encoding='utf-8') as f:
-                SHEET_ID = f.read().strip()
+        SHEET_ID = resolve_sheet_id()
     if not SHEET_ID:
         return None
     gc = get_gc()
@@ -79,34 +114,123 @@ def get_sheet():
 # =========================================================
 # GESTIÓN DE BASE DE DATOS LOCAL Y SINCRONIZACIÓN
 # =========================================================
+def _empty_db():
+    return {
+        'miembros': [],
+        'asistencias': [],
+        'metricas_cultos': {},
+        'ujieres': []
+    }
+
+def _normalize_db(db):
+    """Garantiza que la estructura exista completa aunque el JSON sea de una versión antigua."""
+    if not isinstance(db, dict):
+        return _empty_db()
+    for key in ('miembros', 'asistencias', 'ujieres'):
+        if not isinstance(db.get(key), list):
+            db[key] = []
+    if not isinstance(db.get('metricas_cultos'), dict):
+        db['metricas_cultos'] = {}
+    return db
+
 def load_db():
     if os.path.exists(LOCAL_DB_FILE):
         try:
             with open(LOCAL_DB_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                return _normalize_db(json.load(f))
         except Exception as e:
             print(f'Error leyendo local_db.json: {e}')
 
-    members = []
+    db = _empty_db()
     if os.path.exists(INITIAL_MEMBERS_FILE):
-        with open(INITIAL_MEMBERS_FILE, 'r', encoding='utf-8') as f:
-            members = json.load(f)
+        try:
+            with open(INITIAL_MEMBERS_FILE, 'r', encoding='utf-8') as f:
+                members = json.load(f)
+            if isinstance(members, list):
+                db['miembros'] = members
+        except Exception as e:
+            print(f'Error leyendo initial_members.json: {e}')
 
-    db = {
-        'miembros': members,
-        'asistencias': [],
-        'metricas_cultos': {},
-        'ujieres': [] # Lista vacía para agregar manualmente
-    }
+    # Arranque frío en serverless: si no hay datos locales, recuperar desde Sheets
+    if not db['miembros'] and not db['asistencias']:
+        try:
+            restore_db_from_sheets(db)
+        except Exception as e:
+            print(f'No se pudo restaurar desde Sheets: {e}')
+
     save_db(db)
     return db
 
 def save_db(db):
     try:
-        with open(LOCAL_DB_FILE, 'w', encoding='utf-8') as f:
+        tmp_file = LOCAL_DB_FILE + '.tmp'
+        with open(tmp_file, 'w', encoding='utf-8') as f:
             json.dump(db, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_file, LOCAL_DB_FILE)
     except Exception as e:
         print(f'Error guardando local_db.json: {e}')
+
+def restore_db_from_sheets(db):
+    """Reconstruye la base local desde Google Sheets tras un arranque frío."""
+    sh = get_sheet()
+    if not sh:
+        return False
+    try:
+        ws_m = sh.worksheet('Miembros')
+        for r in ws_m.get_all_records():
+            db['miembros'].append({
+                'id': str(r.get('ID', '')),
+                'categoria': r.get('Categoria', ''),
+                'genero': r.get('Genero', ''),
+                'nombre': str(r.get('Nombre', '')),
+                'apellidos': str(r.get('Apellidos', '')),
+                'telefono': str(r.get('Telefono', '')),
+                'fecha_registro': str(r.get('Fecha_Registro', '')),
+                'estado': r.get('Estado', 'Activo') or 'Activo'
+            })
+    except Exception as e:
+        print(f'Restore Miembros: {e}')
+    try:
+        ws_a = sh.worksheet('Asistencia')
+        for r in ws_a.get_all_records():
+            db['asistencias'].append({
+                'id': str(r.get('ID_Registro', '')),
+                'fecha': str(r.get('Fecha', '')),
+                'culto': str(r.get('Culto', '')),
+                'hora': str(r.get('Hora', '')),
+                'member_id': str(r.get('ID_Miembro', '')),
+                'nombre_completo': str(r.get('Nombre_Completo', '')),
+                'categoria': r.get('Categoria', ''),
+                'genero': r.get('Genero', ''),
+                'ujier': str(r.get('Ujier', '')),
+                'tipo_asistencia': r.get('Tipo_Asistencia', 'Presencial') or 'Presencial'
+            })
+    except Exception as e:
+        print(f'Restore Asistencia: {e}')
+    try:
+        ws_c = sh.worksheet('Cultos_Metricas')
+        for r in ws_c.get_all_records():
+            key = f"{r.get('Fecha', '')}_{r.get('Culto', '')}"
+            if key != '_':
+                db['metricas_cultos'][key] = {
+                    'fecha': str(r.get('Fecha', '')),
+                    'culto': str(r.get('Culto', '')),
+                    'ujier': str(r.get('Ujier', '')),
+                    'transmision_online': to_int(r.get('Transmision_Online', 0))
+                }
+    except Exception as e:
+        print(f'Restore Metricas: {e}')
+    try:
+        ws_u = sh.worksheet('Ujieres')
+        for r in ws_u.get_all_records():
+            nom = str(r.get('Nombre_Ujier', '')).strip()
+            if nom and nom not in db['ujieres']:
+                db['ujieres'].append(nom)
+        db['ujieres'].sort()
+    except Exception as e:
+        print(f'Restore Ujieres: {e}')
+    print(f'Restored desde Sheets: {len(db["miembros"])} miembros, {len(db["asistencias"])} asistencias')
+    return bool(db['miembros'] or db['asistencias'])
 
 db = load_db()
 
@@ -129,6 +253,21 @@ def sync_sheets_write_asistencia(rec):
         ])
     except Exception as e:
         print(f'Error sync asistencia a Sheets: {e}')
+
+def sync_sheets_delete_asistencia(rec):
+    """Elimina de Sheets la fila de asistencia anulada localmente (matching por ID_Registro)."""
+    sh = get_sheet()
+    if not sh: return
+    rec_id = rec.get('id', '')
+    if not rec_id: return
+    try:
+        ws = sh.worksheet('Asistencia')
+        all_v = ws.get_all_values()
+        for i in range(len(all_v) - 1, 0, -1):  # de abajo hacia arriba para no desplazar índices
+            if all_v[i] and all_v[i][0] == rec_id:
+                ws.delete_rows(i + 1)
+    except Exception as e:
+        print(f'Error borrando asistencia en Sheets: {e}')
 
 def sync_sheets_write_member(m):
     sh = get_sheet()
@@ -199,7 +338,7 @@ def sync_sheets_write_metrics(key, data):
             data.get('amigos', 0),
             data.get('transmision_online', 0),
             data.get('total_alcance', 0),
-            datetime.now().isoformat()
+            now_local().isoformat()
         ]
         if target_row:
             ws.update(f'A{target_row}:J{target_row}', [row_vals])
@@ -215,7 +354,7 @@ DIAS_ES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Dom
 MESES_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
 def get_current_date_info():
-    now = datetime.now()
+    now = now_local()
     dia_sem = DIAS_ES[now.weekday()]
     mes_str = MESES_ES[now.month - 1]
     
@@ -261,7 +400,7 @@ def api_info():
         'date_info': get_current_date_info(),
         'cultos': [c['nombre'] for c in CULTOS_CATALOG],
         'ujieres': db.get('ujieres', []),
-        'sheet_configured': bool(SHEET_ID)
+        'sheet_configured': bool(resolve_sheet_id())
     })
 
 @app.route('/api/cultos/search')
@@ -425,7 +564,7 @@ def api_attendance_mark():
     global db
     data = request.json or {}
     member_id = data.get('member_id', '').strip()
-    fecha = data.get('fecha', date.today().strftime('%Y-%m-%d')).strip()
+    fecha = data.get('fecha', now_local().strftime('%Y-%m-%d')).strip()
     culto = data.get('culto', '').strip()
     ujier = data.get('ujier', '').strip()
     observacion = data.get('observacion', '').strip()
@@ -445,8 +584,8 @@ def api_attendance_mark():
     if existing:
         return jsonify({'status': 'already', 'hora': existing.get('hora'), 'message': 'Ya registrado'})
         
-    now = datetime.now()
-    rec_id = f"A{len(db['asistencias']) + 1:04d}"
+    now = now_local()
+    rec_id = f"A{now.strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:4].upper()}"
     rec = {
         'id': rec_id,
         'fecha': fecha,
@@ -502,7 +641,11 @@ def api_attendance_unmark():
     fecha = data.get('fecha', '').strip()
     culto = data.get('culto', '').strip()
     
-    db['asistencias'] = [a for a in db['asistencias'] if not (a.get('fecha') == fecha and a.get('culto') == culto and a.get('member_id') == member_id)]
+    if not member_id or not fecha or not culto:
+        return jsonify({'error': 'Miembro, fecha y culto son obligatorios'}), 400
+
+    removed = [a for a in db['asistencias'] if a.get('fecha') == fecha and a.get('culto') == culto and a.get('member_id') == member_id]
+    db['asistencias'] = [a for a in db['asistencias'] if a not in removed]
     
     key = f"{fecha}_{culto}"
     if key in db['metricas_cultos']:
@@ -520,6 +663,9 @@ def api_attendance_unmark():
             'visitas': vi,
             'total_alcance': len(culto_asist) + tr
         })
+        sync_sheets_write_metrics(key, db['metricas_cultos'][key])
+    for rec in removed:
+        sync_sheets_delete_asistencia(rec)
     save_db(db)
     return jsonify({'status': 'ok'})
 
@@ -527,10 +673,13 @@ def api_attendance_unmark():
 def api_attendance_stream():
     global db
     data = request.json or {}
-    fecha = data.get('fecha', date.today().strftime('%Y-%m-%d')).strip()
+    fecha = data.get('fecha', now_local().strftime('%Y-%m-%d')).strip()
     culto = data.get('culto', '').strip()
-    espectadores = int(data.get('espectadores', 0))
+    espectadores = max(0, to_int(data.get('espectadores', 0)))
     ujier = data.get('ujier', '').strip()
+    
+    if not culto:
+        return jsonify({'error': 'Culto obligatorio'}), 400
     
     key = f"{fecha}_{culto}"
     if key not in db['metricas_cultos']:
@@ -567,7 +716,7 @@ def api_members_new():
     categoria = data.get('categoria', 'Visita').strip() # Visita, Amigo, Hermano, Niño
     genero = data.get('genero', 'Hombre').strip() # Hombre, Mujer, Niño
     telefono = data.get('telefono', '').strip()
-    fecha_reg = data.get('fecha', date.today().strftime('%Y-%m-%d')).strip()
+    fecha_reg = data.get('fecha', now_local().strftime('%Y-%m-%d')).strip()
     culto = data.get('culto', '').strip()
     ujier = data.get('ujier', '').strip()
     marcar_asistencia = data.get('marcar_asistencia', True)
@@ -575,9 +724,27 @@ def api_members_new():
     if not nombre:
         return jsonify({'error': 'El nombre es obligatorio'}), 400
         
+    # Evitar duplicados: mismo nombre normalizado ya registrado y activo
+    full_norm = normalize_str(f"{nombre} {apellidos}")
+    if full_norm:
+        dup = next((m for m in db['miembros']
+                    if m.get('estado', 'Activo') != 'Inactivo'
+                    and normalize_str(f"{m.get('nombre', '')} {m.get('apellidos', '')}") == full_norm), None)
+        if dup:
+            dup_nombre = f'{dup.get("nombre", "")} {dup.get("apellidos", "")}'.strip()
+            return jsonify({'error': f'Ya existe "{dup_nombre}" como {dup.get("categoria")} (ID {dup.get("id")}). Use el apartado de Modificaciones si desea cambiar sus datos.', 'duplicate': True}), 409
+
     prefix = 'V' if categoria == 'Visita' else ('A' if categoria == 'Amigo' else ('N' if categoria == 'Niño' else 'M'))
-    count = sum(1 for m in db['miembros'] if m.get('id', '').startswith(prefix)) + 1
-    new_id = f"{prefix}{count:03d}"
+    # ID monótono: máximo número existente + 1 (evita colisiones)
+    max_n = 0
+    for m in db['miembros']:
+        mid = str(m.get('id', ''))
+        if mid.startswith(prefix) and len(mid) > len(prefix):
+            try:
+                max_n = max(max_n, int(mid[len(prefix):]))
+            except ValueError:
+                pass
+    new_id = f"{prefix}{max_n + 1:03d}"
     
     new_m = {
         'id': new_id,
@@ -590,11 +757,12 @@ def api_members_new():
         'estado': 'Activo'
     }
     db['miembros'].append(new_m)
+    save_db(db)
     sync_sheets_write_member(new_m)
     
     if marcar_asistencia and culto:
-        now = datetime.now()
-        rec_id = f"A{len(db['asistencias']) + 1:04d}"
+        now = now_local()
+        rec_id = f"A{now.strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:4].upper()}"
         rec = {
             'id': rec_id,
             'fecha': fecha_reg,
@@ -639,7 +807,7 @@ def api_members_new():
 @app.route('/api/reports/analytics')
 def api_reports_analytics():
     periodo = request.args.get('periodo', 'ano')
-    now = datetime.now()
+    now = now_local()
     
     asistencias = db.get('asistencias', [])
     filtered = []
@@ -649,11 +817,11 @@ def api_reports_analytics():
         if not f_str: continue
         try:
             f_dt = datetime.strptime(f_str, '%Y-%m-%d')
-        except:
+        except ValueError:
             continue
             
         if periodo == 'semana':
-            if (now - f_dt).days <= 7:
+            if timedelta(0) <= (now - f_dt) <= timedelta(days=7):
                 filtered.append((f_dt, a))
         elif periodo == 'mes':
             if f_dt.year == now.year and f_dt.month == now.month:
@@ -762,24 +930,13 @@ def api_reports_export_csv():
             a.get('ujier', ''),
             a.get('tipo_asistencia', 'Presencial')
         ])
-    return Response(output.getvalue(), mimetype='text/csv',
+    return Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8',
                     headers={'Content-Disposition': 'attachment; filename=asistencia_ipue_granada.csv'})
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
-    from flask import send_file
-    for base in [
-        STATIC_DIR,
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public', 'static'),
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static'),
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static'),
-        os.path.dirname(os.path.abspath(__file__))
-    ]:
-        p = os.path.join(base, filename)
-        if os.path.exists(p) and os.path.isfile(p):
-            mimetype = 'text/css' if filename.endswith('.css') else ('image/jpeg' if filename.endswith(('.jpg', '.jpeg')) else None)
-            return send_file(p, mimetype=mimetype)
-    return "Not found", 404
+    # send_from_directory previene path traversal fuera del directorio estático
+    return send_from_directory(STATIC_DIR, filename)
 
 @app.route('/api/logo')
 def serve_logo():
