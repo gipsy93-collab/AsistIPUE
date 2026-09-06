@@ -749,7 +749,37 @@ def api_reports_export_csv():
     return Response(output.getvalue(), mimetype='text/csv',
                     headers={'Content-Disposition': 'attachment; filename=asistencia_ipue_granada.csv'})
 
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    from flask import send_file
+    for base in [
+        STATIC_DIR,
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public', 'static'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static'),
+        os.path.dirname(os.path.abspath(__file__))
+    ]:
+        p = os.path.join(base, filename)
+        if os.path.exists(p) and os.path.isfile(p):
+            mimetype = 'text/css' if filename.endswith('.css') else ('image/jpeg' if filename.endswith(('.jpg', '.jpeg')) else None)
+            return send_file(p, mimetype=mimetype)
+    return "Not found", 404
+
+@app.route('/api/logo')
+def serve_logo():
+    from flask import send_file
+    for p in [
+        os.path.join(STATIC_DIR, 'logo_ipue.jpeg'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logo_ipue.jpeg'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public', 'static', 'logo_ipue.jpeg'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', 'logo_ipue.jpeg')
+    ]:
+        if os.path.exists(p) and os.path.isfile(p):
+            return send_file(p, mimetype='image/jpeg')
+    return "Logo not found", 404
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f'Servidor IPUE ASISIPUE iniciado en http://localhost:{port}')
     app.run(debug=True, host='0.0.0.0', port=port)
+

@@ -6,6 +6,8 @@
     <title>Analítica & Reportes - IPUE Granada</title>
     <link rel="stylesheet" href="/static/app.css">
     <style>
+        {% include 'app.css' %}
+
         .report-layout {
             max-width: 1280px;
             margin: 24px auto;
@@ -192,7 +194,7 @@
             <div class="logo-wrapper">
                 <div class="logo-container logo-option-1" id="churchLogoContainer" title="IPUE Granada - Haz clic para interactuar" onclick="triggerLogoEffect()">
                     <div class="logo-shimmer"></div>
-                    <img src="/static/logo_ipue.jpeg" alt="Logo IPUE Granada" class="church-logo">
+                    <img src="/static/logo_ipue.jpeg" onerror="this.onerror=null;this.src='/api/logo';" alt="Logo IPUE Granada" class="church-logo">
                     <span class="logo-subtext">Granada</span>
                 </div>
             </div>
