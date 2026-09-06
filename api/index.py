@@ -15,6 +15,20 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
+class VercelPathFix:
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        for prefix in ['/api/index.py', '/api/index']:
+            if path.startswith(prefix):
+                new_path = path[len(prefix):]
+                environ['PATH_INFO'] = new_path if new_path.startswith('/') else ('/' + new_path)
+                break
+        return self.wsgi_app(environ, start_response)
+
+app.wsgi_app = VercelPathFix(app.wsgi_app)
+
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 os.makedirs(DATA_DIR, exist_ok=True)
 LOCAL_DB_FILE = os.path.join(DATA_DIR, 'local_db.json')
@@ -229,6 +243,8 @@ def get_current_date_info():
 # RUTAS DE PÁGINAS PRINCIPALES
 # =========================================================
 @app.route('/')
+@app.route('/api/index.py')
+@app.route('/api/index')
 def index_page():
     return render_template('index.html')
 
