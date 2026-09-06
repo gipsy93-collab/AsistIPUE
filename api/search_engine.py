@@ -106,6 +106,21 @@ CULTOS_CATALOG = [
         'nombre': 'Culto General / Especial',
         'dia_habitual': 'Especial',
         'keywords': ['general', 'especial', 'aniversario', 'confraternidad', 'convencion', 'campana']
+    },
+    {
+        'nombre': 'Culto de Acción de Gracias',
+        'dia_habitual': 'Especial',
+        'keywords': ['accion', 'gracias', 'agradecimiento', 'gratitud', 'testimonio', 'accion de gracias']
+    },
+    {
+        'nombre': 'Culto de Primicias',
+        'dia_habitual': 'Especial / Anual',
+        'keywords': ['primicias', 'primicia', 'ofrenda', 'frutos', 'primeros frutos', 'consagracion']
+    },
+    {
+        'nombre': 'Culto de Fin de Año',
+        'dia_habitual': '31 de Diciembre',
+        'keywords': ['fin', 'ano', 'ano nuevo', 'despedida', 'nochevieja', '31', 'diciembre', 'prospero']
     }
 ]
 

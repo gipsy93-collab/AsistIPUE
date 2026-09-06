@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <title>Control de Asistencia - IPUE Granada</title>
     <link rel="stylesheet" href="/static/app.css">
     <style>
@@ -66,16 +66,19 @@
                     <option value="Culto de Caballeros">Culto de Caballeros</option>
                     <option value="Vigilia de Oración">Vigilia de Oración</option>
                     <option value="Ayuno y Oración">Ayuno y Oración</option>
+                    <option value="Culto de Acción de Gracias">Culto de Acción de Gracias</option>
+                    <option value="Culto de Primicias">Culto de Primicias</option>
+                    <option value="Culto de Fin de Año">Culto de Fin de Año</option>
                 </select>
             </div>
 
-            <!-- UJIER EN TURNO -->
-            <div class="input-pill">
-                <label>Ujier:</label>
+            <!-- UJIER EN TURNO (FIRMA OBLIGATORIA) -->
+            <div class="input-pill ujier-pill" id="ujierPillContainer">
+                <label title="Ujier responsable que firma y asume el registro del culto">✍️ Firma Ujier:</label>
                 <select id="serviceUjier" onchange="onUjierChange()">
                     <option value="">Seleccionar Ujier...</option>
                 </select>
-                <button type="button" onclick="promptNewUjier()" style="background:none;border:none;color:var(--accent-cyan);cursor:pointer;font-weight:700;font-size:14px;margin-left:6px;" title="Agregar nuevo ujier">+ Nuevo</button>
+                <button type="button" class="btn-ujier-manage" onclick="openManageUjieresModal()" title="Gestionar Ujieres (agregar, modificar o retirar)">👥 Ujieres</button>
             </div>
 
             <!-- TRANSMISIÓN ONLINE -->
@@ -86,26 +89,35 @@
             </div>
         </div>
 
-        <!-- CONTADORES EN VIVO -->
+        <!-- CONTADORES EN VIVO INTERACTIVOS (TOCA PARA VER LA LISTA DE ASISTENTES) -->
         <div class="live-metrics-chips">
-            <div class="metric-chip chip-total" id="chipTotal" title="Total Asistentes Presenciales">
+            <div class="metric-chip chip-total interactive-chip" id="chipTotal" onclick="openAttendeesModal('Todos')" title="Toca para ver todos los presentes en este culto">
                 <span>Presentes:</span> <span id="valTotal">0</span>
+                <span class="chip-action-hint">👁️ Ver</span>
             </div>
-            <div class="metric-chip chip-hermanos" id="chipHermanos" title="Hermanos">
+            <div class="metric-chip chip-hermanos interactive-chip" id="chipHermanos" onclick="openAttendeesModal('Hermano')" title="Toca para ver la lista de Hermanos presentes">
                 <span class="dot-chip"></span><span>Hermanos:</span> <span id="valHermanos">0</span>
+                <span class="chip-action-hint">👁️</span>
             </div>
-            <div class="metric-chip chip-amigos" id="chipAmigos" title="Amigos Regulares">
+            <div class="metric-chip chip-amigos interactive-chip" id="chipAmigos" onclick="openAttendeesModal('Amigo')" title="Toca para ver la lista de Amigos presentes">
                 <span class="dot-chip"></span><span>Amigos:</span> <span id="valAmigos">0</span>
+                <span class="chip-action-hint">👁️</span>
             </div>
-            <div class="metric-chip chip-visitas" id="chipVisitas" title="Visitas / Nuevos">
+            <div class="metric-chip chip-visitas interactive-chip" id="chipVisitas" onclick="openAttendeesModal('Visita')" title="Toca para ver la lista de Visitas presentes">
                 <span class="dot-chip"></span><span>Visitas:</span> <span id="valVisitas">0</span>
+                <span class="chip-action-hint">👁️</span>
             </div>
-            <div class="metric-chip chip-ninos" id="chipNinos" title="Niños">
+            <div class="metric-chip chip-ninos interactive-chip" id="chipNinos" onclick="openAttendeesModal('Niño')" title="Toca para ver la lista de Niños presentes">
                 <span class="dot-chip"></span><span>Niños:</span> <span id="valNinos">0</span>
+                <span class="chip-action-hint">👁️</span>
             </div>
-            <div class="metric-chip chip-online" id="chipOnline" title="Espectadores Transmisión">
+            <div class="metric-chip chip-online" id="chipOnline" title="Espectadores Transmisión YouTube">
                 <span class="dot-chip"></span><span>En Línea:</span> <span id="valOnline">0</span>
             </div>
+            <!-- DESCARGAR INFORME POR CULTO -->
+            <button type="button" class="btn-export-culto" onclick="downloadCurrentCultoReport()" title="Descargar informe de asistencia de este culto en Excel / CSV">
+                📥 Descargar Informe
+            </button>
         </div>
     </section>
 
@@ -207,6 +219,10 @@
                         <div class="info-val" id="detPhone">—</div>
                     </div>
                     <div class="info-box">
+                        <div class="info-label">Fecha de Registro</div>
+                        <div class="info-val" id="detFechaReg">—</div>
+                    </div>
+                    <div class="info-box">
                         <div class="info-label">Total Histórico Asistencias</div>
                         <div class="info-val" id="detTotalAsist">0</div>
                     </div>
@@ -229,7 +245,7 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3 class="modal-title" id="newModalTitle">+ Registrar Nuevo Asistente</h3>
-                <button onclick="closeNewMemberModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <button type="button" onclick="closeNewMemberModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
             </div>
             <form id="newMemberForm" onsubmit="event.preventDefault(); submitNewMember();">
                 <div class="form-group">
@@ -239,6 +255,10 @@
                 <div class="form-group">
                     <label>Apellidos</label>
                     <input type="text" id="newApe" class="form-control" placeholder="Ej. Gómez Pérez">
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Registro *</label>
+                    <input type="date" id="newFechaRegistro" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label>Categoría</label>
@@ -280,7 +300,7 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3 class="modal-title">✏️ Apartado de Modificaciones / Desagregar</h3>
-                <button onclick="closeEditModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <button type="button" onclick="closeEditModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
             </div>
             <form id="editMemberForm" onsubmit="event.preventDefault(); submitEditMember();">
                 <div class="form-group" id="editSearchGroup" style="background:#eff6ff;padding:10px;border-radius:var(--radius-sm);border:1px solid #bfdbfe;margin-bottom:14px;">
@@ -295,6 +315,10 @@
                 <div class="form-group">
                     <label>Apellidos</label>
                     <input type="text" id="editApe" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Registro</label>
+                    <input type="date" id="editFechaReg" class="form-control">
                 </div>
                 <div class="form-group">
                     <label>Categoría</label>
@@ -332,6 +356,86 @@
                     <button type="submit" class="btn-modal-save">Guardar Cambios</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL GESTIÓN DE UJIERES (AGREGAR, MODIFICAR, RETIRAR) -->
+    <div class="modal-overlay" id="manageUjieresModal" style="display: none; z-index: 1250;" onclick="if(event.target === this) closeManageUjieresModal()">
+        <div class="modal-card" style="max-width: 520px;">
+            <div class="modal-header">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:22px;">✍️</span>
+                    <div>
+                        <h3 class="modal-title" style="margin:0;">Gestión de Ujieres</h3>
+                        <small style="color:var(--text-muted);font-size:11px;">Responsables del registro y firmas oficiales</small>
+                    </div>
+                </div>
+                <button type="button" onclick="closeManageUjieresModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+            
+            <div style="background:#eff6ff;padding:12px;border-radius:var(--radius-sm);border:1px solid #bfdbfe;margin-bottom:14px;">
+                <label style="font-size:12px;font-weight:700;color:var(--primary-blue-dark);display:block;margin-bottom:6px;">+ Agregar Nuevo Ujier:</label>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="newUjierNameInput" class="form-control" placeholder="Nombre completo del ujier..." onkeydown="if(event.key==='Enter'){event.preventDefault();submitAddUjier();}">
+                    <button type="button" class="btn-modal-save" onclick="submitAddUjier()" style="width:auto;white-space:nowrap;padding:8px 16px;">+ Agregar</button>
+                </div>
+            </div>
+
+            <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px;">
+                Ujieres Activos en Sistema (<span id="ujieresCountBadge">0</span>)
+            </div>
+
+            <div id="ujieresListContainer" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                <!-- Lista inyectada por JS -->
+            </div>
+
+            <div class="modal-actions" style="margin-top:16px;">
+                <button type="button" class="btn-modal-cancel" onclick="closeManageUjieresModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL VER ASISTENTES DEL CULTO ACTIVO (TOCAR EN CULTOS / CHIPS) -->
+    <div class="modal-overlay" id="attendeesListModal" style="display: none; z-index: 1250;" onclick="if(event.target === this) closeAttendeesModal()">
+        <div class="modal-card" style="max-width: 650px; max-height: 88vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="attendeesModalTitle">👥 Asistentes al Culto</h3>
+                    <div id="attendeesModalSubtitle" style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                        Cargando información del culto...
+                    </div>
+                </div>
+                <button type="button" onclick="closeAttendeesModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+
+            <!-- FILTRO DE CATEGORÍAS TABS -->
+            <div class="attendees-filter-tabs">
+                <button type="button" class="attendees-tab-btn active" data-cat="Todos" onclick="changeAttendeesTab('Todos', this)">Todos (<span id="tabCountTodos">0</span>)</button>
+                <button type="button" class="attendees-tab-btn" data-cat="Hermano" onclick="changeAttendeesTab('Hermano', this)">Hermanos (<span id="tabCountHermanos">0</span>)</button>
+                <button type="button" class="attendees-tab-btn" data-cat="Amigo" onclick="changeAttendeesTab('Amigo', this)">Amigos (<span id="tabCountAmigos">0</span>)</button>
+                <button type="button" class="attendees-tab-btn" data-cat="Visita" onclick="changeAttendeesTab('Visita', this)">Visitas (<span id="tabCountVisitas">0</span>)</button>
+                <button type="button" class="attendees-tab-btn" data-cat="Niño" onclick="changeAttendeesTab('Niño', this)">Niños (<span id="tabCountNinos">0</span>)</button>
+            </div>
+
+            <!-- BÚSQUEDA RÁPIDA DENTRO DE LA LISTA DE PRESENTES -->
+            <div style="margin-top: 10px; margin-bottom: 10px;">
+                <input type="text" id="filterAttendeesInput" class="form-control" placeholder="🔍 Filtrar asistente por nombre en este culto..." oninput="onFilterAttendeesInput(this.value)">
+            </div>
+
+            <!-- LISTADO CON SCROLL -->
+            <div class="attendees-list-scroll" id="attendeesListContent" style="flex: 1; overflow-y: auto; max-height: 380px;">
+                <div class="empty-state">Cargando asistentes...</div>
+            </div>
+
+            <!-- ACCIONES DEL MODAL -->
+            <div class="modal-actions" style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn-export-culto" onclick="downloadCurrentCultoReport()">
+                    📥 Descargar Informe CSV / Excel
+                </button>
+                <button type="button" class="btn-modal-cancel" onclick="closeAttendeesModal()">
+                    Cerrar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -515,10 +619,21 @@
             window.scrollTo(0, 0);
             await initApp();
             
-            document.getElementById('searchInput').addEventListener('input', (e) => {
-                clearTimeout(searchDebounce);
-                searchDebounce = setTimeout(() => doSearch(e.target.value), 180);
-            });
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    clearTimeout(searchDebounce);
+                    searchDebounce = setTimeout(() => doSearch(e.target.value), 180);
+                });
+                // En móviles, ajustar el scroll al enfocar para evitar que el teclado oculte resultados
+                searchInput.addEventListener('focus', () => {
+                    if (window.innerWidth <= 860) {
+                        setTimeout(() => {
+                            document.querySelector('.search-header')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 250);
+                    }
+                });
+            }
         });
 
         // Sugerencia de culto según el día de la semana del dispositivo (0=domingo)
@@ -586,39 +701,173 @@
             }
         }
 
+        let ujieresList = [];
+
+        function requireActiveUjier() {
+            const select = document.getElementById('serviceUjier');
+            const ujierVal = (activeUjier || select.value || '').trim();
+            if (!ujierVal) {
+                const pill = document.getElementById('ujierPillContainer');
+                if (pill) {
+                    pill.classList.remove('ujier-required-pulse');
+                    void pill.offsetWidth;
+                    pill.classList.add('ujier-required-pulse');
+                    pill.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                select?.focus();
+                alert('✍️ Firma de Ujier obligatoria:\n\nCada servicio debe contar con un Ujier responsable que firma y asume el registro.\n\nPor favor selecciona o agrega el Ujier de turno en la barra superior.');
+                return false;
+            }
+            return true;
+        }
+
         function updateUjieresDropdown(list) {
+            ujieresList = list || [];
             const selectUjier = document.getElementById('serviceUjier');
-            const current = selectUjier.value;
+            const saved = localStorage.getItem('ipue_active_ujier') || '';
+            const current = selectUjier.value || activeUjier || saved;
+            
             selectUjier.innerHTML = '<option value="">Seleccionar Ujier...</option>';
             if (list && list.length > 0) {
                 list.forEach(u => {
                     const opt = document.createElement('option');
                     opt.value = u;
                     opt.textContent = u;
-                    if (u === current) opt.selected = true;
+                    if (u === current || u === saved) opt.selected = true;
                     selectUjier.appendChild(opt);
                 });
             }
             activeUjier = selectUjier.value;
+            if (activeUjier) {
+                localStorage.setItem('ipue_active_ujier', activeUjier);
+            }
         }
 
         function onUjierChange() {
             activeUjier = document.getElementById('serviceUjier').value;
+            if (activeUjier) {
+                localStorage.setItem('ipue_active_ujier', activeUjier);
+                document.getElementById('ujierPillContainer')?.classList.remove('ujier-required-pulse');
+            } else {
+                localStorage.removeItem('ipue_active_ujier');
+            }
         }
 
-        async function promptNewUjier() {
-            const nom = prompt('Escribe el nombre del nuevo Ujier para agregarlo al sistema:');
-            if (!nom || !nom.trim()) return;
-            const res = await fetch('/api/ujieres/add', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ nombre: nom.trim() })
-            });
-            const data = await res.json();
-            if (data.ujieres) {
-                updateUjieresDropdown(data.ujieres);
-                document.getElementById('serviceUjier').value = nom.trim();
-                activeUjier = nom.trim();
+        // GESTIÓN DE UJIERES (MODAL)
+        function openManageUjieresModal() {
+            renderUjieresManagementList();
+            document.getElementById('manageUjieresModal').style.display = 'flex';
+            document.getElementById('newUjierNameInput').value = '';
+            setTimeout(() => document.getElementById('newUjierNameInput').focus(), 150);
+        }
+
+        function closeManageUjieresModal() {
+            document.getElementById('manageUjieresModal').style.display = 'none';
+        }
+
+        function renderUjieresManagementList() {
+            const container = document.getElementById('ujieresListContainer');
+            const countBadge = document.getElementById('ujieresCountBadge');
+            countBadge.textContent = ujieresList.length;
+
+            if (!ujieresList || ujieresList.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay ujieres registrados aún. Agrega uno arriba.</div>';
+                return;
+            }
+
+            container.innerHTML = ujieresList.map(u => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#ffffff;border:1px solid var(--border-light);border-radius:var(--radius-sm);">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:16px;">👤</span>
+                        <span style="font-weight:700;font-size:14px;color:var(--text-main);">${escapeHtml(u)}</span>
+                        ${u === activeUjier ? '<span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:800;padding:2px 6px;border-radius:10px;">EN TURNO</span>' : ''}
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button type="button" class="btn-row-edit" onclick="promptEditUjier('${escapeHtml(u)}')" title="Modificar nombre de este Ujier">✏️ Renombrar</button>
+                        <button type="button" class="btn-row-unmark" onclick="confirmDeleteUjier('${escapeHtml(u)}')" title="Retirar este Ujier">🗑️ Retirar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function submitAddUjier() {
+            const input = document.getElementById('newUjierNameInput');
+            const nom = input.value.trim();
+            if (!nom) {
+                alert('Escribe el nombre del nuevo Ujier');
+                return;
+            }
+            try {
+                const res = await fetch('/api/ujieres/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nombre: nom })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    input.value = '';
+                    updateUjieresDropdown(data.ujieres);
+                    activeUjier = nom;
+                    document.getElementById('serviceUjier').value = nom;
+                    localStorage.setItem('ipue_active_ujier', nom);
+                    document.getElementById('ujierPillContainer')?.classList.remove('ujier-required-pulse');
+                    renderUjieresManagementList();
+                } else {
+                    alert(data.error || 'Error al agregar ujier');
+                }
+            } catch (e) {
+                alert('Error al agregar ujier');
+            }
+        }
+
+        async function promptEditUjier(oldName) {
+            const newName = prompt(`Modificar o corregir el nombre del Ujier:`, oldName);
+            if (!newName || !newName.trim() || newName.trim() === oldName) return;
+            try {
+                const res = await fetch('/api/ujieres/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ old_name: oldName, new_name: newName.trim() })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    updateUjieresDropdown(data.ujieres);
+                    if (activeUjier === oldName) {
+                        activeUjier = newName.trim();
+                        document.getElementById('serviceUjier').value = newName.trim();
+                        localStorage.setItem('ipue_active_ujier', newName.trim());
+                    }
+                    renderUjieresManagementList();
+                } else {
+                    alert(data.error || 'Error al actualizar ujier');
+                }
+            } catch (e) {
+                alert('Error al actualizar ujier');
+            }
+        }
+
+        async function confirmDeleteUjier(name) {
+            if (!confirm(`¿Estás seguro de que deseas retirar a "${name}" de la lista de Ujieres?`)) return;
+            try {
+                const res = await fetch('/api/ujieres/delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nombre: name })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    updateUjieresDropdown(data.ujieres);
+                    if (activeUjier === name) {
+                        activeUjier = '';
+                        document.getElementById('serviceUjier').value = '';
+                        localStorage.removeItem('ipue_active_ujier');
+                    }
+                    renderUjieresManagementList();
+                } else {
+                    alert(data.error || 'Error al retirar ujier');
+                }
+            } catch (e) {
+                alert('Error al retirar ujier');
             }
         }
 
@@ -749,6 +998,13 @@
             selectedMember = m;
             showDetail(m);
             document.querySelectorAll('.member-item').forEach(el => el.classList.remove('selected'));
+            // En móvil, desplazar suavemente a la ficha y ocultar el teclado para que no estorbe
+            if (window.innerWidth <= 860) {
+                document.activeElement?.blur?.();
+                setTimeout(() => {
+                    document.getElementById('detailContent')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
         }
 
         function showDetail(m) {
@@ -784,6 +1040,7 @@
             document.getElementById('detCatVal').textContent = m.categoria;
             document.getElementById('detGender').textContent = m.genero || 'Hombre';
             document.getElementById('detPhone').textContent = m.telefono || '—';
+            document.getElementById('detFechaReg').textContent = m.fecha_registro || 'No registrada';
             document.getElementById('detTotalAsist').textContent = `${m.total_asistencias || 0} cultos`;
 
             // Alerta de visita frecuente
@@ -813,6 +1070,7 @@
 
         async function markSelectedAttendance() {
             if (!selectedMember) return;
+            if (!requireActiveUjier()) return;
             const btn = document.getElementById('btnMarkAttendance');
             btn.textContent = 'Registrando...';
             btn.disabled = true;
@@ -906,9 +1164,10 @@
         // 5. MODAL REGISTRO NUEVO
         function openNewMemberModal(defaultCat = 'Visita') {
             document.getElementById('newCat').value = defaultCat;
+            document.getElementById('newFechaRegistro').value = activeDate || deviceToday();
             document.getElementById('newModalTitle').textContent = '+ Registrar Nuevo';
             document.getElementById('newMemberModal').style.display = 'flex';
-            document.getElementById('newNom').focus();
+            setTimeout(() => document.getElementById('newNom').focus(), 150);
         }
 
         function closeNewMemberModal() {
@@ -925,8 +1184,10 @@
         }
 
         async function submitNewMember() {
+            if (!requireActiveUjier()) return;
             const nom = document.getElementById('newNom').value.trim();
             const ape = document.getElementById('newApe').value.trim();
+            const fechaReg = document.getElementById('newFechaRegistro').value || activeDate || deviceToday();
             const cat = document.getElementById('newCat').value;
             const gen = document.getElementById('newGen').value;
             const tel = document.getElementById('newTel').value.trim();
@@ -939,6 +1200,7 @@
                     body: JSON.stringify({
                         nombre: nom,
                         apellidos: ape,
+                        fecha_registro: fechaReg,
                         categoria: cat,
                         genero: gen,
                         telefono: tel,
@@ -995,6 +1257,7 @@
             memberBeingEdited = m;
             document.getElementById('editNom').value = m.nombre || '';
             document.getElementById('editApe').value = m.apellidos || '';
+            document.getElementById('editFechaReg').value = m.fecha_registro || '';
             document.getElementById('editCat').value = m.categoria || 'Hermano';
             document.getElementById('editGen').value = m.genero || 'Hombre';
             document.getElementById('editTel').value = m.telefono || '';
@@ -1043,6 +1306,7 @@
                 id: memberBeingEdited.id,
                 nombre: document.getElementById('editNom').value.trim(),
                 apellidos: document.getElementById('editApe').value.trim(),
+                fecha_registro: document.getElementById('editFechaReg').value,
                 categoria: document.getElementById('editCat').value,
                 genero: document.getElementById('editGen').value,
                 telefono: document.getElementById('editTel').value.trim(),
@@ -1072,6 +1336,148 @@
             } catch (e) {
                 alert('Error al actualizar datos.');
             }
+        }
+
+        // =========================================================
+        // 7. MODAL LISTADO DE ASISTENTES (TOCAR EN CULTOS / CHIPS)
+        // =========================================================
+        let activeAttendeesCategory = 'Todos';
+        let allCurrentAttendees = [];
+
+        async function openAttendeesModal(cat = 'Todos') {
+            activeAttendeesCategory = cat;
+            document.getElementById('attendeesModalTitle').textContent = `👥 Asistentes: ${activeCulto}`;
+            document.getElementById('attendeesModalSubtitle').textContent = `📅 Fecha: ${activeDate} · Filtrando categoría: ${cat}`;
+            document.getElementById('attendeesListModal').style.display = 'flex';
+            document.getElementById('filterAttendeesInput').value = '';
+
+            // Actualizar botones de tabs
+            document.querySelectorAll('.attendees-tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-cat') === cat);
+            });
+
+            document.getElementById('attendeesListContent').innerHTML = '<div class="empty-state">Consultando asistentes de este culto...</div>';
+
+            try {
+                const res = await fetch(`/api/attendance/current-list?fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto)}`);
+                const data = await res.json();
+                allCurrentAttendees = data.attendees || [];
+
+                // Contar por categorías para los badges de las pestañas
+                const cntTodos = allCurrentAttendees.length;
+                const cntHermanos = allCurrentAttendees.filter(a => a.categoria === 'Hermano').length;
+                const cntAmigos = allCurrentAttendees.filter(a => a.categoria === 'Amigo').length;
+                const cntVisitas = allCurrentAttendees.filter(a => a.categoria === 'Visita').length;
+                const cntNinos = allCurrentAttendees.filter(a => a.categoria === 'Niño').length;
+
+                document.getElementById('tabCountTodos').textContent = cntTodos;
+                document.getElementById('tabCountHermanos').textContent = cntHermanos;
+                document.getElementById('tabCountAmigos').textContent = cntAmigos;
+                document.getElementById('tabCountVisitas').textContent = cntVisitas;
+                document.getElementById('tabCountNinos').textContent = cntNinos;
+
+                renderAttendeesFilteredList();
+            } catch (e) {
+                document.getElementById('attendeesListContent').innerHTML = '<div class="empty-state">Error al cargar asistentes.</div>';
+            }
+        }
+
+        function closeAttendeesModal() {
+            document.getElementById('attendeesListModal').style.display = 'none';
+        }
+
+        function changeAttendeesTab(cat, btn) {
+            activeAttendeesCategory = cat;
+            document.querySelectorAll('.attendees-tab-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderAttendeesFilteredList();
+        }
+
+        function onFilterAttendeesInput(query) {
+            renderAttendeesFilteredList(query);
+        }
+
+        function renderAttendeesFilteredList(query = '') {
+            const container = document.getElementById('attendeesListContent');
+            const q = (query || document.getElementById('filterAttendeesInput').value || '').trim().toLowerCase();
+
+            let list = allCurrentAttendees;
+            if (activeAttendeesCategory !== 'Todos') {
+                list = list.filter(a => a.categoria === activeAttendeesCategory);
+            }
+            if (q) {
+                list = list.filter(a => (a.nombre_completo || '').toLowerCase().includes(q) || (a.telefono || '').includes(q));
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="empty-state">No hay asistentes registrados en esta categoría para el culto actual (${escapeHtml(activeCulto)}).</div>`;
+                return;
+            }
+
+            container.innerHTML = list.map(a => {
+                const catClass = a.categoria === 'Hermano' ? 'tag-hermano' : (a.categoria === 'Niño' ? 'tag-nino' : (a.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
+                const dotColor = a.categoria === 'Hermano' ? '#0284c7' : (a.categoria === 'Niño' ? '#d97706' : (a.categoria === 'Amigo' ? '#059669' : '#7e22ce'));
+                return `
+                    <div class="attendee-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#ffffff;border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;color:var(--text-main);">${escapeHtml(a.nombre_completo)}</div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-top:3px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;">
+                                <span class="category-tag ${catClass}">
+                                    <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};display:inline-block;"></span>
+                                    ${escapeHtml(a.categoria)}
+                                </span>
+                                <span>⏰ Llegada: <strong>${escapeHtml(a.hora)}</strong></span>
+                                ${a.ujier ? `<span>✍️ Ujier: <strong>${escapeHtml(a.ujier)}</strong></span>` : ''}
+                                ${a.telefono ? `<span>📞 ${escapeHtml(a.telefono)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <button type="button" class="btn-row-unmark" onclick="unmarkFromAttendeesList('${escapeHtml(a.member_id)}', '${escapeHtml(a.nombre_completo)}')" title="Anular marca de este asistente">✕ Deshacer</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function unmarkFromAttendeesList(mid, name) {
+            if (!confirm(`¿Deseas retirar la marca de asistencia de "${name}" en este culto?`)) return;
+            try {
+                const res = await fetch('/api/attendance/unmark', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        member_id: mid,
+                        fecha: activeDate,
+                        culto: activeCulto
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    allCurrentAttendees = allCurrentAttendees.filter(a => a.member_id !== mid);
+                    if (selectedMember && selectedMember.id === mid) {
+                        selectedMember.asistio = false;
+                        selectedMember.hora_asistencia = '';
+                        showDetail(selectedMember);
+                    }
+                    await updateSummary();
+                    // Refrescar modal
+                    openAttendeesModal(activeAttendeesCategory);
+                    const q = document.getElementById('searchInput').value;
+                    if (q.length >= 2) doSearch(q);
+                } else {
+                    alert(data.error || 'Error al anular asistencia');
+                }
+            } catch (e) {
+                alert('Error al anular asistencia');
+            }
+        }
+
+        function downloadCurrentCultoReport() {
+            if (!activeDate || !activeCulto) {
+                alert('Selecciona fecha y culto para generar el informe.');
+                return;
+            }
+            window.open(`/api/reports/export-culto-csv?fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto)}`, '_blank');
         }
 
         // =========================================================
