@@ -165,19 +165,50 @@ def get_or_create_ujieres_ws(sh):
             print(f'Error creando hoja Ujieres en Sheets: {e}')
             return None
 
+def get_or_create_visitas_ws(sh):
+    if not sh:
+        return None
+    try:
+        return sh.worksheet('Visitas')
+    except Exception:
+        try:
+            ws = sh.add_worksheet('Visitas', 1000, 8)
+            ws.append_row(['ID', 'Fecha_Registro', 'Hora_Registro', 'Nombre', 'Apellidos', 'Telefono', 'Genero', 'Total_Asistencias'])
+            return ws
+        except Exception as e:
+            print(f'Error creando hoja Visitas en Sheets: {e}')
+            return None
+
+def get_or_create_amigos_ws(sh):
+    if not sh:
+        return None
+    try:
+        return sh.worksheet('Amigos')
+    except Exception:
+        try:
+            ws = sh.add_worksheet('Amigos', 1000, 8)
+            ws.append_row(['ID', 'Fecha_Registro', 'Hora_Registro', 'Nombre', 'Apellidos', 'Telefono', 'Genero', 'Total_Asistencias'])
+            return ws
+        except Exception as e:
+            print(f'Error creando hoja Amigos en Sheets: {e}')
+            return None
+
 def restore_db_from_sheets(target_db):
     """Reconstruye atómicamente la base local desde Google Sheets usando batch get (alta velocidad < 1s)."""
     sh = get_sheet()
     if not sh:
         return False
 
-    # 1. Asegurar pestaña Ujieres
+    # Asegurar pestañas
     try:
         get_or_create_ujieres_ws(sh)
+        get_or_create_visitas_ws(sh)
+        get_or_create_amigos_ws(sh)
     except Exception as e:
-        print(f'Asegurar Ujieres ws: {e}')
+        print(f'Asegurar hojas ws: {e}')
 
     new_miembros = []
+    seen_ids = set()
     new_asistencias = []
     new_metricas = {}
     new_ujieres = []
@@ -186,6 +217,8 @@ def restore_db_from_sheets(target_db):
     try:
         batch = sh.values_batch_get([
             'Miembros!A1:H',
+            'Visitas!A1:H',
+            'Amigos!A1:H',
             'Asistencia!A1:J',
             'Cultos_Metricas!A1:D',
             'Ujieres!A1:C'
@@ -196,110 +229,137 @@ def restore_db_from_sheets(target_db):
     except Exception as e:
         print(f'Error en values_batch_get: {e}')
 
-    # Si batch falló, intentar fallback a get_all_records()
-    if not ranges:
-        try:
-            ws_m = sh.worksheet('Miembros')
-            for r in ws_m.get_all_records():
-                m_id = str(r.get('ID', '')).strip()
-                if not m_id:
-                    continue
-                new_miembros.append({
-                    'id': m_id,
-                    'categoria': str(r.get('Categoria', 'Hermano')).strip() or 'Hermano',
-                    'genero': str(r.get('Genero', 'Hombre')).strip() or 'Hombre',
-                    'nombre': str(r.get('Nombre', '')).strip(),
-                    'apellidos': str(r.get('Apellidos', '')).strip(),
-                    'telefono': str(r.get('Telefono', '')).strip(),
-                    'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
-                    'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo'
-                })
-        except Exception as e:
-            print(f'Fallback Miembros: {e}')
-        try:
-            ws_u = get_or_create_ujieres_ws(sh)
-            if ws_u:
-                for r in ws_u.get_all_records():
-                    nom = str(r.get('Nombre_Ujier', '')).strip()
-                    if nom and nom not in new_ujieres:
-                        new_ujieres.append(nom)
-        except Exception as e:
-            print(f'Fallback Ujieres: {e}')
-    else:
-        # Procesar filas descargadas en bloque
-        m_rows = ranges.get('Miembros', [])
-        if len(m_rows) > 1:
-            headers = [h.strip() for h in m_rows[0]]
-            for row in m_rows[1:]:
-                if not row:
-                    continue
-                r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
-                m_id = str(r.get('ID', '')).strip()
-                if not m_id:
-                    continue
-                cat = str(r.get('Categoria', 'Hermano')).strip() or 'Hermano'
-                new_miembros.append({
-                    'id': m_id,
-                    'categoria': cat,
-                    'genero': str(r.get('Genero', 'Hombre')).strip() or 'Hombre',
-                    'nombre': str(r.get('Nombre', '')).strip(),
-                    'apellidos': str(r.get('Apellidos', '')).strip(),
-                    'telefono': str(r.get('Telefono', '')).strip(),
-                    'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
-                    'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo'
-                })
+    # Procesar filas descargadas en bloque
+    # 1. Miembros (Miembros activos / Hermanos)
+    m_rows = ranges.get('Miembros', [])
+    if len(m_rows) > 1:
+        headers = [h.strip() for h in m_rows[0]]
+        for row in m_rows[1:]:
+            if not row:
+                continue
+            r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+            m_id = str(r.get('ID', '')).strip()
+            if not m_id or m_id in seen_ids:
+                continue
+            seen_ids.add(m_id)
+            cat = str(r.get('Categoria', 'Hermano')).strip() or 'Hermano'
+            new_miembros.append({
+                'id': m_id,
+                'categoria': cat,
+                'genero': str(r.get('Genero', 'Hombre')).strip() or 'Hombre',
+                'nombre': str(r.get('Nombre', '')).strip(),
+                'apellidos': str(r.get('Apellidos', '')).strip(),
+                'telefono': str(r.get('Telefono', '')).strip(),
+                'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
+                'hora_registro': '',
+                'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo',
+                'total_asistencias': 0
+            })
 
-        a_rows = ranges.get('Asistencia', [])
-        if len(a_rows) > 1:
-            headers = [h.strip() for h in a_rows[0]]
-            for row in a_rows[1:]:
-                if not row:
-                    continue
-                r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
-                rec_id = str(r.get('ID_Registro', '')).strip()
-                if not rec_id:
-                    continue
-                new_asistencias.append({
-                    'id': rec_id,
-                    'fecha': str(r.get('Fecha', '')).strip(),
-                    'culto': str(r.get('Culto', '')).strip(),
-                    'hora': str(r.get('Hora', '')).strip(),
-                    'member_id': str(r.get('ID_Miembro', '')).strip(),
-                    'nombre_completo': str(r.get('Nombre_Completo', '')).strip(),
-                    'categoria': str(r.get('Categoria', '')).strip(),
-                    'genero': str(r.get('Genero', '')).strip(),
+    # 2. Visitas (Hoja Visitas: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias)
+    v_rows = ranges.get('Visitas', [])
+    if len(v_rows) > 1:
+        headers = [h.strip() for h in v_rows[0]]
+        for row in v_rows[1:]:
+            if not row:
+                continue
+            r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+            v_id = str(r.get('ID', '')).strip()
+            if not v_id or v_id in seen_ids:
+                continue
+            seen_ids.add(v_id)
+            new_miembros.append({
+                'id': v_id,
+                'categoria': 'Visita',
+                'genero': str(r.get('Genero', 'Hombre')).strip() or 'Hombre',
+                'nombre': str(r.get('Nombre', '')).strip(),
+                'apellidos': str(r.get('Apellidos', '')).strip(),
+                'telefono': str(r.get('Telefono', '')).strip(),
+                'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
+                'hora_registro': str(r.get('Hora_Registro', '')).strip(),
+                'estado': 'Activo',
+                'total_asistencias': to_int(r.get('Total_Asistencias', 0))
+            })
+
+    # 3. Amigos (Hoja Amigos: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias)
+    a_m_rows = ranges.get('Amigos', [])
+    if len(a_m_rows) > 1:
+        headers = [h.strip() for h in a_m_rows[0]]
+        for row in a_m_rows[1:]:
+            if not row:
+                continue
+            r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+            a_id = str(r.get('ID', '')).strip()
+            if not a_id or a_id in seen_ids:
+                continue
+            seen_ids.add(a_id)
+            new_miembros.append({
+                'id': a_id,
+                'categoria': 'Amigo',
+                'genero': str(r.get('Genero', 'Hombre')).strip() or 'Hombre',
+                'nombre': str(r.get('Nombre', '')).strip(),
+                'apellidos': str(r.get('Apellidos', '')).strip(),
+                'telefono': str(r.get('Telefono', '')).strip(),
+                'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
+                'hora_registro': str(r.get('Hora_Registro', '')).strip(),
+                'estado': 'Activo',
+                'total_asistencias': to_int(r.get('Total_Asistencias', 0))
+            })
+
+    # 4. Asistencias
+    a_rows = ranges.get('Asistencia', [])
+    if len(a_rows) > 1:
+        headers = [h.strip() for h in a_rows[0]]
+        for row in a_rows[1:]:
+            if not row:
+                continue
+            r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+            rec_id = str(r.get('ID_Registro', '')).strip()
+            if not rec_id:
+                continue
+            new_asistencias.append({
+                'id': rec_id,
+                'fecha': str(r.get('Fecha', '')).strip(),
+                'culto': str(r.get('Culto', '')).strip(),
+                'hora': str(r.get('Hora', '')).strip(),
+                'member_id': str(r.get('ID_Miembro', '')).strip(),
+                'nombre_completo': str(r.get('Nombre_Completo', '')).strip(),
+                'categoria': str(r.get('Categoria', '')).strip(),
+                'genero': str(r.get('Genero', '')).strip(),
+                'ujier': str(r.get('Ujier', '')).strip(),
+                'tipo_asistencia': str(r.get('Tipo_Asistencia', 'Presencial')).strip() or 'Presencial'
+            })
+
+    # 5. Métricas de Cultos
+    c_rows = ranges.get('Cultos_Metricas', [])
+    if len(c_rows) > 1:
+        headers = [h.strip() for h in c_rows[0]]
+        for row in c_rows[1:]:
+            if not row:
+                continue
+            r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+            f = str(r.get('Fecha', '')).strip()
+            c = str(r.get('Culto', '')).strip()
+            key = f"{f}_{c}"
+            if key != '_':
+                new_metricas[key] = {
+                    'fecha': f,
+                    'culto': c,
                     'ujier': str(r.get('Ujier', '')).strip(),
-                    'tipo_asistencia': str(r.get('Tipo_Asistencia', 'Presencial')).strip() or 'Presencial'
-                })
+                    'transmision_online': to_int(r.get('Transmision_Online', 0))
+                }
 
-        c_rows = ranges.get('Cultos_Metricas', [])
-        if len(c_rows) > 1:
-            headers = [h.strip() for h in c_rows[0]]
-            for row in c_rows[1:]:
-                if not row:
-                    continue
-                r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
-                f = str(r.get('Fecha', '')).strip()
-                c = str(r.get('Culto', '')).strip()
-                key = f"{f}_{c}"
-                if key != '_':
-                    new_metricas[key] = {
-                        'fecha': f,
-                        'culto': c,
-                        'ujier': str(r.get('Ujier', '')).strip(),
-                        'transmision_online': to_int(r.get('Transmision_Online', 0))
-                    }
-
-        u_rows = ranges.get('Ujieres', [])
-        if len(u_rows) > 1:
-            headers = [h.strip() for h in u_rows[0]]
-            for row in u_rows[1:]:
-                if not row:
-                    continue
-                r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
-                nom = str(r.get('Nombre_Ujier', '')).strip()
-                if nom and nom not in new_ujieres:
-                    new_ujieres.append(nom)
+    # 6. Ujieres
+    u_rows = ranges.get('Ujieres', [])
+    if len(u_rows) > 1:
+        headers = [h.strip() for h in u_rows[0]]
+        for row in u_rows[1:]:
+            if not row:
+                continue
+            r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+            nom = str(r.get('Nombre_Ujier', '')).strip()
+            if nom and nom not in new_ujieres:
+                new_ujieres.append(nom)
 
     # Actualizar target_db asegurando que no se borren datos existentes por fallos parciales
     updated = False
@@ -317,7 +377,7 @@ def restore_db_from_sheets(target_db):
         target_db['ujieres'] = new_ujieres
         updated = True
 
-    print(f'Sync Sheets exitoso: {len(target_db.get("miembros", []))} miembros, {len(target_db.get("asistencias", []))} asistencias, {len(target_db.get("ujieres", []))} ujieres')
+    print(f'Sync Sheets exitoso: {len(target_db.get("miembros", []))} asistentes (Miembros+Visitas+Amigos), {len(target_db.get("asistencias", []))} asistencias, {len(target_db.get("ujieres", []))} ujieres')
     return updated
 
 LAST_SYNC_TIME = None
@@ -421,45 +481,102 @@ def sync_sheets_delete_asistencia(rec):
 def sync_sheets_write_member(m):
     sh = get_sheet()
     if not sh: return
+    cat = m.get('categoria', '').strip()
     try:
-        ws = sh.worksheet('Miembros')
-        ws.append_row([
-            m.get('id', ''),
-            m.get('categoria', ''),
-            m.get('genero', ''),
-            m.get('nombre', ''),
-            m.get('apellidos', ''),
-            m.get('telefono', ''),
-            m.get('fecha_registro', ''),
-            m.get('estado', 'Activo')
-        ])
+        if cat == 'Visita':
+            ws = get_or_create_visitas_ws(sh)
+            if ws:
+                ws.append_row([
+                    m.get('id', ''),
+                    m.get('fecha_registro', ''),
+                    m.get('hora_registro', ''),
+                    m.get('nombre', ''),
+                    m.get('apellidos', ''),
+                    m.get('telefono', ''),
+                    m.get('genero', 'Hombre'),
+                    m.get('total_asistencias', 0)
+                ])
+        elif cat == 'Amigo':
+            ws = get_or_create_amigos_ws(sh)
+            if ws:
+                ws.append_row([
+                    m.get('id', ''),
+                    m.get('fecha_registro', ''),
+                    m.get('hora_registro', ''),
+                    m.get('nombre', ''),
+                    m.get('apellidos', ''),
+                    m.get('telefono', ''),
+                    m.get('genero', 'Hombre'),
+                    m.get('total_asistencias', 0)
+                ])
+        else:
+            ws = sh.worksheet('Miembros')
+            ws.append_row([
+                m.get('id', ''),
+                m.get('categoria', 'Hermano'),
+                m.get('genero', 'Hombre'),
+                m.get('nombre', ''),
+                m.get('apellidos', ''),
+                m.get('telefono', ''),
+                m.get('fecha_registro', ''),
+                m.get('estado', 'Activo')
+            ])
     except Exception as e:
         print(f'Error sync miembro a Sheets: {e}')
 
 def sync_sheets_update_member(m):
     sh = get_sheet()
     if not sh: return
+    cat = m.get('categoria', '').strip()
+    m_id = str(m.get('id', '')).strip()
+    target_sheet_name = 'Visitas' if cat == 'Visita' else ('Amigos' if cat == 'Amigo' else 'Miembros')
+
+    found_ws = None
+    found_row = None
+
+    for s_name in ['Miembros', 'Visitas', 'Amigos']:
+        try:
+            ws_check = sh.worksheet(s_name)
+            col_ids = ws_check.col_values(1)
+            if m_id in col_ids:
+                found_ws = ws_check
+                found_row = col_ids.index(m_id) + 1
+                break
+        except Exception:
+            continue
+
     try:
-        ws = sh.worksheet('Miembros')
-        col_ids = ws.col_values(1)
-        m_id = str(m.get('id', '')).strip()
-        target_row = None
-        if m_id in col_ids:
-            target_row = col_ids.index(m_id) + 1
-        row_vals = [
-            m.get('id', ''),
-            m.get('categoria', ''),
-            m.get('genero', ''),
-            m.get('nombre', ''),
-            m.get('apellidos', ''),
-            m.get('telefono', ''),
-            m.get('fecha_registro', ''),
-            m.get('estado', 'Activo')
-        ]
-        if target_row:
-            ws.update(values=[row_vals], range_name=f'A{target_row}:H{target_row}')
+        if found_ws and found_ws.title == target_sheet_name:
+            if target_sheet_name in ('Visitas', 'Amigos'):
+                row_vals = [
+                    m.get('id', ''),
+                    m.get('fecha_registro', ''),
+                    m.get('hora_registro', ''),
+                    m.get('nombre', ''),
+                    m.get('apellidos', ''),
+                    m.get('telefono', ''),
+                    m.get('genero', 'Hombre'),
+                    m.get('total_asistencias', 0)
+                ]
+            else:
+                row_vals = [
+                    m.get('id', ''),
+                    m.get('categoria', ''),
+                    m.get('genero', ''),
+                    m.get('nombre', ''),
+                    m.get('apellidos', ''),
+                    m.get('telefono', ''),
+                    m.get('fecha_registro', ''),
+                    m.get('estado', 'Activo')
+                ]
+            found_ws.update(values=[row_vals], range_name=f'A{found_row}:H{found_row}')
         else:
-            ws.append_row(row_vals)
+            if found_ws and found_row:
+                try:
+                    found_ws.delete_rows(found_row)
+                except Exception as e_del:
+                    print(f'Error retirando de hoja previa {found_ws.title}: {e_del}')
+            sync_sheets_write_member(m)
     except Exception as e:
         print(f'Error sync update miembro a Sheets: {e}')
 
@@ -777,10 +894,14 @@ def api_members_promote_visita():
         return jsonify({'error': 'Miembro no encontrado'}), 404
         
     tot_asist = sum(1 for a in db.get('asistencias', []) if a.get('member_id') == mid)
+    member['total_asistencias'] = tot_asist
     
     if action == 'promote':
         member['categoria'] = 'Amigo'
         member['recordar_en'] = None
+        for a in db.get('asistencias', []):
+            if a.get('member_id') == mid:
+                a['categoria'] = 'Amigo'
     elif action == 'remind_10':
         member['recordar_en'] = tot_asist + 10
     elif action == 'no':
@@ -976,7 +1097,9 @@ def api_members_new():
     categoria = data.get('categoria', 'Visita').strip() # Visita, Amigo, Hermano, Niño
     genero = data.get('genero', 'Hombre').strip() # Hombre, Mujer, Niño
     telefono = data.get('telefono', '').strip()
-    fecha_reg = (data.get('fecha_registro') or data.get('fecha') or now_local().strftime('%Y-%m-%d')).strip()
+    now = now_local()
+    fecha_reg = (data.get('fecha_registro') or data.get('fecha') or now.strftime('%Y-%m-%d')).strip()
+    hora_reg = (data.get('hora_registro') or data.get('hora') or now.strftime('%H:%M:%S')).strip()
     culto = data.get('culto', '').strip()
     ujier = data.get('ujier', '').strip()
     marcar_asistencia = data.get('marcar_asistencia', True)
@@ -1019,7 +1142,9 @@ def api_members_new():
         'genero': genero,
         'telefono': telefono,
         'fecha_registro': fecha_reg,
-        'estado': 'Activo'
+        'hora_registro': hora_reg,
+        'estado': 'Activo',
+        'total_asistencias': 1 if (marcar_asistencia and culto) else 0
     }
     db['miembros'].append(new_m)
     save_db(db)

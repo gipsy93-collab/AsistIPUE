@@ -8,7 +8,9 @@
       "apellidos": "VELEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M002",
@@ -18,7 +20,9 @@
       "apellidos": "VILLAFAÑE",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M003",
@@ -28,7 +32,9 @@
       "apellidos": "VALENCIA VASQUEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M004",
@@ -38,7 +44,9 @@
       "apellidos": "BORRERO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M005",
@@ -48,7 +56,9 @@
       "apellidos": "ORELLANA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M006",
@@ -58,7 +68,9 @@
       "apellidos": "GUERRERO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M007",
@@ -68,7 +80,9 @@
       "apellidos": "BERRIO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M008",
@@ -78,7 +92,9 @@
       "apellidos": "CORTES",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M009",
@@ -88,7 +104,9 @@
       "apellidos": "ORTIZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M010",
@@ -98,7 +116,9 @@
       "apellidos": "LOZANO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M011",
@@ -108,7 +128,9 @@
       "apellidos": "MURILLO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M012",
@@ -118,7 +140,9 @@
       "apellidos": "CASTRO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M013",
@@ -128,7 +152,9 @@
       "apellidos": "CARVAJALINO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M014",
@@ -138,7 +164,9 @@
       "apellidos": "ALVAREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M015",
@@ -148,7 +176,9 @@
       "apellidos": "SEPULVEDA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M016",
@@ -158,7 +188,9 @@
       "apellidos": "TORRES",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M017",
@@ -168,7 +200,9 @@
       "apellidos": "PERAZA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M018",
@@ -178,7 +212,9 @@
       "apellidos": "ASCANIO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M019",
@@ -188,7 +224,9 @@
       "apellidos": "MORA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M020",
@@ -198,7 +236,9 @@
       "apellidos": "ECHEVERRY",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M021",
@@ -208,7 +248,9 @@
       "apellidos": "CASTRO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M022",
@@ -218,7 +260,9 @@
       "apellidos": "GONZALES",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M023",
@@ -228,7 +272,9 @@
       "apellidos": "FERNANDEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M024",
@@ -238,7 +284,9 @@
       "apellidos": "QUINTO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M025",
@@ -248,7 +296,9 @@
       "apellidos": "LOZANO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M026",
@@ -258,7 +308,9 @@
       "apellidos": "CASTRO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M027",
@@ -268,7 +320,9 @@
       "apellidos": "",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M028",
@@ -278,7 +332,9 @@
       "apellidos": "TINEO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M029",
@@ -288,7 +344,9 @@
       "apellidos": "MOSIBE MOTOBE",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M030",
@@ -298,7 +356,9 @@
       "apellidos": "CEBALLOS",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M031",
@@ -308,7 +368,9 @@
       "apellidos": "QUINTERO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M032",
@@ -318,7 +380,9 @@
       "apellidos": "HINOJOSA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M033",
@@ -328,7 +392,9 @@
       "apellidos": "ZAMBRANO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M034",
@@ -338,7 +404,9 @@
       "apellidos": "ASCANIO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M035",
@@ -348,7 +416,9 @@
       "apellidos": "IRIARTE",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M036",
@@ -358,7 +428,9 @@
       "apellidos": "DOMENECH",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M037",
@@ -368,7 +440,9 @@
       "apellidos": "ARAUJO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M038",
@@ -378,7 +452,9 @@
       "apellidos": "FERNANDEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M039",
@@ -388,7 +464,9 @@
       "apellidos": "CORTEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M040",
@@ -398,7 +476,9 @@
       "apellidos": "SANCHEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M041",
@@ -408,7 +488,9 @@
       "apellidos": "DOMENECH",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M042",
@@ -418,7 +500,9 @@
       "apellidos": "ORTIZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M043",
@@ -428,7 +512,9 @@
       "apellidos": "MONTERO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M044",
@@ -438,7 +524,9 @@
       "apellidos": "GALAN",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M045",
@@ -448,7 +536,9 @@
       "apellidos": "CANTILLO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M046",
@@ -458,7 +548,9 @@
       "apellidos": "MORENO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M047",
@@ -468,7 +560,9 @@
       "apellidos": "BONILLA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M048",
@@ -478,7 +572,9 @@
       "apellidos": "MUÑOZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M049",
@@ -488,7 +584,9 @@
       "apellidos": "VALENCIA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M050",
@@ -498,7 +596,9 @@
       "apellidos": "CARIEL",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M051",
@@ -508,7 +608,9 @@
       "apellidos": "OTERO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M052",
@@ -518,7 +620,9 @@
       "apellidos": "GUTIERREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M053",
@@ -528,7 +632,9 @@
       "apellidos": "CAMACHO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M054",
@@ -538,7 +644,9 @@
       "apellidos": "CASTRO PIÑA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M055",
@@ -548,7 +656,9 @@
       "apellidos": "GUTIERREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M056",
@@ -558,7 +668,9 @@
       "apellidos": "PINEDA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M057",
@@ -568,7 +680,9 @@
       "apellidos": "PEREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M058",
@@ -578,7 +692,9 @@
       "apellidos": "QUICENO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M059",
@@ -588,7 +704,9 @@
       "apellidos": "VILLANUEVA MEDINA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M060",
@@ -598,7 +716,9 @@
       "apellidos": "",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M061",
@@ -608,7 +728,9 @@
       "apellidos": "CORPAS",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M062",
@@ -618,7 +740,9 @@
       "apellidos": "SAMBRANO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M063",
@@ -628,7 +752,9 @@
       "apellidos": "RAMIREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M064",
@@ -638,7 +764,9 @@
       "apellidos": "MORENO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M065",
@@ -648,7 +776,9 @@
       "apellidos": "RIOS",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M066",
@@ -658,7 +788,9 @@
       "apellidos": "RAMIREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M067",
@@ -668,7 +800,9 @@
       "apellidos": "RODRIGUEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M068",
@@ -678,7 +812,9 @@
       "apellidos": "LOPEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M069",
@@ -688,7 +824,9 @@
       "apellidos": "OTERO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M070",
@@ -698,7 +836,9 @@
       "apellidos": "VILLAFAÑE",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M071",
@@ -708,7 +848,9 @@
       "apellidos": "MIRANDA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M072",
@@ -718,7 +860,9 @@
       "apellidos": "CALDERA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M073",
@@ -728,7 +872,9 @@
       "apellidos": "CAMACHO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M074",
@@ -738,7 +884,9 @@
       "apellidos": "VALIENTE",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M075",
@@ -748,7 +896,9 @@
       "apellidos": "NUÑEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M076",
@@ -758,7 +908,9 @@
       "apellidos": "CHARLES",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M077",
@@ -768,7 +920,9 @@
       "apellidos": "OSPINA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M078",
@@ -778,7 +932,9 @@
       "apellidos": "VALDEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M079",
@@ -788,7 +944,9 @@
       "apellidos": "VILLADA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M080",
@@ -798,7 +956,9 @@
       "apellidos": "RAMIREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "M081",
@@ -808,7 +968,9 @@
       "apellidos": "SANCHEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N001",
@@ -818,7 +980,9 @@
       "apellidos": "CASTRO CARIEL",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N002",
@@ -828,7 +992,9 @@
       "apellidos": "VILLAFAÑE CASTRO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N003",
@@ -838,7 +1004,9 @@
       "apellidos": "MIRANDA CORPAS",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N004",
@@ -848,7 +1016,9 @@
       "apellidos": "CORTEZ RAMIREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N005",
@@ -858,7 +1028,9 @@
       "apellidos": "GARCIA PUCHE",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N006",
@@ -868,7 +1040,9 @@
       "apellidos": "ECHEVERRY GALAN",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N007",
@@ -878,7 +1052,9 @@
       "apellidos": "MOLINA MERIÑO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N008",
@@ -888,7 +1064,9 @@
       "apellidos": "GUERRERO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N009",
@@ -898,7 +1076,9 @@
       "apellidos": "MERIÑO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N010",
@@ -908,7 +1088,9 @@
       "apellidos": "CASTRO GUTIERREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N011",
@@ -918,7 +1100,9 @@
       "apellidos": "CEBALLOS",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N012",
@@ -928,7 +1112,9 @@
       "apellidos": "SANCHEZ BARCO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N013",
@@ -938,7 +1124,9 @@
       "apellidos": "PEREZ MEDINA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N014",
@@ -948,7 +1136,9 @@
       "apellidos": "ORELLANA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N015",
@@ -958,7 +1148,9 @@
       "apellidos": "CASTRO CARIEL",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N016",
@@ -968,7 +1160,9 @@
       "apellidos": "LOPEZ VALDEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N017",
@@ -978,7 +1172,9 @@
       "apellidos": "CAMACHO BONILLA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N018",
@@ -988,7 +1184,9 @@
       "apellidos": "CATELLANOS QUINTO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N019",
@@ -998,7 +1196,9 @@
       "apellidos": "GARCIA PUCHE",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N020",
@@ -1008,7 +1208,9 @@
       "apellidos": "GUERRERO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N021",
@@ -1018,7 +1220,9 @@
       "apellidos": "TORRES",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N022",
@@ -1028,7 +1232,9 @@
       "apellidos": "MIRANDA CORPAS",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N023",
@@ -1038,7 +1244,9 @@
       "apellidos": "IRIARTE ALVAREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N024",
@@ -1048,7 +1256,9 @@
       "apellidos": "",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N025",
@@ -1058,7 +1268,9 @@
       "apellidos": "OTERO SARMIRENTO",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N026",
@@ -1068,7 +1280,9 @@
       "apellidos": "IRIARTE ALVAREZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N027",
@@ -1078,7 +1292,9 @@
       "apellidos": "ORELLANA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N028",
@@ -1088,7 +1304,9 @@
       "apellidos": "GARCIA PUCHE",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N029",
@@ -1098,7 +1316,9 @@
       "apellidos": "VILLAFAÑE",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N030",
@@ -1108,7 +1328,9 @@
       "apellidos": "SANCHEZ",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N031",
@@ -1118,7 +1340,9 @@
       "apellidos": "ORELLANA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "N032",
@@ -1128,7 +1352,9 @@
       "apellidos": "ZUÑIGA",
       "telefono": "",
       "fecha_registro": "2025-01-01",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "V001",
@@ -1138,7 +1364,9 @@
       "apellidos": "",
       "telefono": "",
       "fecha_registro": "2026-09-06",
-      "estado": "Inactivo"
+      "hora_registro": "",
+      "estado": "Inactivo",
+      "total_asistencias": 0
     },
     {
       "id": "V002",
@@ -1148,27 +1376,9 @@
       "apellidos": "VELEZ",
       "telefono": "",
       "fecha_registro": "2026-09-06",
-      "estado": "Activo"
-    },
-    {
-      "id": "V001",
-      "categoria": "Visita",
-      "genero": "Hombre",
-      "nombre": "<IMG SRC=X ONERROR=ALERT(1)>",
-      "apellidos": "",
-      "telefono": "",
-      "fecha_registro": "2026-09-06",
-      "estado": "Activo"
-    },
-    {
-      "id": "V001",
-      "categoria": "Visita",
-      "genero": "Hombre",
-      "nombre": "<IMG SRC=X ONERROR=ALERT(1)>",
-      "apellidos": "",
-      "telefono": "",
-      "fecha_registro": "2026-09-06",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     },
     {
       "id": "ZTEST",
@@ -1178,47 +1388,9 @@
       "apellidos": "SEGUIMIENTO",
       "telefono": "",
       "fecha_registro": "2026-09-06",
-      "estado": "Activo"
-    },
-    {
-      "id": "V001",
-      "categoria": "Visita",
-      "genero": "Hombre",
-      "nombre": "<IMG SRC=X ONERROR=ALERT(1)>",
-      "apellidos": "",
-      "telefono": "",
-      "fecha_registro": "2026-09-06",
-      "estado": "Activo"
-    },
-    {
-      "id": "V001",
-      "categoria": "Visita",
-      "genero": "Hombre",
-      "nombre": "<IMG SRC=X ONERROR=ALERT(1)>",
-      "apellidos": "",
-      "telefono": "",
-      "fecha_registro": "2026-09-06",
-      "estado": "Activo"
-    },
-    {
-      "id": "V001",
-      "categoria": "Visita",
-      "genero": "Hombre",
-      "nombre": "<IMG SRC=X ONERROR=ALERT(1)>",
-      "apellidos": "",
-      "telefono": "",
-      "fecha_registro": "2026-09-06",
-      "estado": "Activo"
-    },
-    {
-      "id": "V001",
-      "categoria": "Visita",
-      "genero": "Hombre",
-      "nombre": "<IMG SRC=X ONERROR=ALERT(1)>",
-      "apellidos": "",
-      "telefono": "",
-      "fecha_registro": "2026-09-06",
-      "estado": "Activo"
+      "hora_registro": "",
+      "estado": "Activo",
+      "total_asistencias": 0
     }
   ],
   "asistencias": [
