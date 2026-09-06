@@ -147,43 +147,50 @@ body {
 }
 
 /* =========================================================
-   LOGO INSTITUCIONAL IPUE GRANADA (+40% TAMAÑO - OPCIÓN 1 Y OPCIÓN 2)
+   BOTÓN CANAL YOUTUBE EN VIVO (MONITOREO DE ASISTENCIA ONLINE)
 ========================================================= */
-.logo-style-switcher {
-    display: inline-flex;
-    background: rgba(0, 20, 60, 0.45);
-    padding: 3px;
-    border-radius: var(--radius-full);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-}
-
-.btn-style-pill {
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.82);
-    font-size: 11px;
-    font-weight: 700;
-    padding: 5px 12px;
-    border-radius: var(--radius-full);
-    cursor: pointer;
-    transition: var(--transition);
-    white-space: nowrap;
+.btn-yt-stream {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-}
-
-.btn-style-pill.active {
-    background: linear-gradient(135deg, var(--accent-gold) 0%, #fbbf24 100%);
-    color: var(--primary-blue-dark);
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.45);
-}
-
-.btn-style-pill:hover:not(.active) {
+    gap: 8px;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.12);
+    padding: 8px 15px;
+    border-radius: var(--radius-full);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    transition: var(--transition);
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+}
+
+.btn-yt-stream:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.55);
+    color: #ffffff;
+}
+
+.yt-svg {
+    flex-shrink: 0;
+}
+
+.yt-pulse {
+    width: 7px;
+    height: 7px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: inline-block;
+    animation: ytPulseAnim 1.6s infinite;
+}
+
+@keyframes ytPulseAnim {
+    0% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8); }
+    70% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); }
+    100% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
 }
 
 .logo-wrapper {
@@ -1130,9 +1137,11 @@ body {
         width: 100%;
     }
 
-    .logo-style-switcher {
+    .btn-yt-stream {
         width: 100%;
         justify-content: center;
+        font-size: 13px;
+        padding: 9px 16px;
     }
 
     .nav-links {
