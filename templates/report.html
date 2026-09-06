@@ -184,10 +184,13 @@
             </div>
         </div>
         <div class="header-right">
-            <div class="logo-style-switcher" title="Elige la opción visual para el logo de la iglesia">
-                <button type="button" class="btn-style-pill active" id="btnStyleOpt1" onclick="switchLogoOption('option-1')">✨ Opción 1: Oro Glass</button>
-                <button type="button" class="btn-style-pill" id="btnStyleOpt2" onclick="switchLogoOption('option-2')">💎 Opción 2: 3D Emblema</button>
-            </div>
+            <a href="https://www.youtube.com/@ipue_granada/live" target="_blank" rel="noopener noreferrer" class="btn-yt-stream" title="Abrir canal oficial de YouTube de IPUE Granada para ver espectadores en directo">
+                <svg class="yt-svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                <span class="yt-pulse"></span>
+                <span>🔴 YouTube En Vivo</span>
+            </a>
             <div class="nav-links">
                 <a href="/" class="nav-btn">👈 Volver a Registro</a>
             </div>
@@ -321,63 +324,15 @@
     <script>
         let currentPeriod = 'ano';
 
-        // GESTIÓN DEL LOGO INTERACTIVO (+40% TAMAÑO: OPCIÓN 1 Y OPCIÓN 2)
-        function switchLogoOption(option) {
-            const container = document.getElementById('churchLogoContainer');
-            const btn1 = document.getElementById('btnStyleOpt1');
-            const btn2 = document.getElementById('btnStyleOpt2');
-            if (!container) return;
-            
-            if (option === 'option-2') {
-                container.classList.remove('logo-option-1');
-                container.classList.add('logo-option-2');
-                if (btn1) btn1.classList.remove('active');
-                if (btn2) btn2.classList.add('active');
-                localStorage.setItem('ipue_logo_style', 'option-2');
-            } else {
-                container.classList.remove('logo-option-2');
-                container.classList.add('logo-option-1');
-                if (btn2) btn2.classList.remove('active');
-                if (btn1) btn1.classList.add('active');
-                localStorage.setItem('ipue_logo_style', 'option-1');
-            }
-            triggerLogoEffect();
-        }
-
         function triggerLogoEffect() {
             const container = document.getElementById('churchLogoContainer');
             if (!container) return;
-            if (container.classList.contains('logo-option-1')) {
-                container.classList.remove('animate-sweep');
-                void container.offsetWidth; // reflow
-                container.classList.add('animate-sweep');
-            } else {
-                container.style.transform = 'scale(0.96) rotateX(6deg) rotateY(-6deg)';
-                setTimeout(() => {
-                    container.style.transform = '';
-                }, 280);
-            }
+            container.classList.remove('animate-sweep');
+            void container.offsetWidth; // reflow
+            container.classList.add('animate-sweep');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const savedLogo = localStorage.getItem('ipue_logo_style') || 'option-1';
-            switchLogoOption(savedLogo);
-
-            const logoEl = document.getElementById('churchLogoContainer');
-            if (logoEl) {
-                logoEl.addEventListener('mousemove', (e) => {
-                    if (!logoEl.classList.contains('logo-option-2')) return;
-                    const rect = logoEl.getBoundingClientRect();
-                    const x = e.clientX - rect.left - rect.width / 2;
-                    const y = e.clientY - rect.top - rect.height / 2;
-                    logoEl.style.transform = `perspective(600px) rotateX(${-y / 6}deg) rotateY(${x / 6}deg) scale(1.05)`;
-                });
-                logoEl.addEventListener('mouseleave', () => {
-                    if (!logoEl.classList.contains('logo-option-2')) return;
-                    logoEl.style.transform = '';
-                });
-            }
-
             loadAnalytics('ano');
             loadFriends();
         });
