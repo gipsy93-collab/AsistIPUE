@@ -743,6 +743,20 @@ def report_culto_print():
         ujier = u
         ujieres_list = [u] if u else []
         
+    valid_ujieres = sorted(list(set(u for u in db.get('ujieres', []) if u and not u.strip().lower().startswith('prueba'))))
+    # Por defecto, SOLO UN ujier responsable principal
+    ujier_principal = ''
+    if ujieres_list:
+        ujier_principal = ujieres_list[0]
+    elif ujier:
+        ujier_principal = ujier
+    elif valid_ujieres:
+        ujier_principal = valid_ujieres[0]
+    else:
+        ujier_principal = 'Ujier en Turno'
+        
+    firmantes_iniciales = [ujier_principal] if ujier_principal else []
+        
     hermanos = sum(1 for a in asist_filtradas if is_hermano(a.get('categoria')))
     ninos = sum(1 for a in asist_filtradas if a.get('categoria') == 'Niño' or a.get('genero') == 'Niño')
     amigos = sum(1 for a in asist_filtradas if a.get('categoria') == 'Amigo')
@@ -756,8 +770,10 @@ def report_culto_print():
         fecha=fecha,
         fecha_larga=fecha_larga,
         culto=culto_nombre,
-        ujier=ujier or 'Ujier en Turno',
+        ujier=ujier_principal,
         ujieres_list=ujieres_list,
+        firmantes_iniciales=firmantes_iniciales,
+        todos_los_ujieres=valid_ujieres,
         hermanos=hermanos,
         ninos=ninos,
         amigos=amigos,

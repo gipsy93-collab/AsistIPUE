@@ -223,17 +223,91 @@
         }
 
         .screen-toolbar {
-            max-width: 800px;
+            max-width: 860px;
             margin: 0 auto 16px auto;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 12px 18px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
             display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
             justify-content: space-between;
             align-items: center;
+        }
+        .toolbar-signers {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+        .toolbar-signers-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .signers-chips-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .signer-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .signer-chip .chip-del {
+            cursor: pointer;
+            color: #dc2626;
+            font-weight: 800;
+            margin-left: 2px;
+            font-size: 13px;
+        }
+        .signer-chip .chip-del:hover {
+            color: #991b1b;
+        }
+        .signer-select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            font-size: 12px;
+            font-weight: 600;
+            color: #334155;
+            background: #ffffff;
+            cursor: pointer;
+        }
+        .btn-add-custom {
+            background: #f8fafc;
+            border: 1px dashed #94a3b8;
+            color: #475569;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-add-custom:hover {
+            background: #f1f5f9;
+            color: #0f172a;
         }
         .btn-print {
             background: #0284c7;
             color: #ffffff;
             border: none;
-            padding: 8px 16px;
+            padding: 9px 18px;
             border-radius: 6px;
             font-size: 13px;
             font-weight: 700;
@@ -241,6 +315,10 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+        }
+        .btn-print:hover {
+            background: #0369a1;
         }
         .btn-close {
             background: #ffffff;
@@ -251,6 +329,9 @@
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
+        }
+        .btn-close:hover {
+            background: #f8fafc;
         }
 
         @media print {
@@ -272,7 +353,21 @@
 <body>
 
     <div class="screen-toolbar">
-        <button type="button" class="btn-close" onclick="window.close()">✕ Cerrar ventana</button>
+        <button type="button" class="btn-close" onclick="window.close()">✕ Cerrar</button>
+        
+        <div class="toolbar-signers">
+            <span class="toolbar-signers-label">✍️ Ujier(es) en firma:</span>
+            <div id="signersChips" class="signers-chips-box"></div>
+            
+            <select id="ujierSelector" class="signer-select" onchange="addSignerFromSelect(this.value)">
+                <option value="">+ Agregar otro Ujier...</option>
+                {% for u in todos_los_ujieres %}
+                <option value="{{ u }}">{{ u }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn-add-custom" onclick="addCustomSigner()">+ Escribir otro</button>
+        </div>
+
         <button type="button" class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar en PDF</button>
     </div>
 
@@ -300,7 +395,7 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Ujier en Turno:</span>
-                <span class="info-value">{{ ujier or 'No asignado' }}</span>
+                <span class="info-value" id="ujierInfoValue">{{ ujier or 'No asignado' }}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Reunión / Culto:</span>
@@ -388,30 +483,99 @@
         </table>
 
         <!-- SECCIÓN OFICIAL DE FIRMA: EXCLUSIVAMENTE DEL UJIER EN TURNO -->
-        <div class="signature-section">
-            {% if ujieres_list and ujieres_list|length > 0 %}
-                {% for u in ujieres_list %}
-                <div class="signature-box">
-                    <div class="sig-line"></div>
-                    <div class="sig-name">{{ u }}</div>
-                    <div class="sig-role">Firma del Ujier Responsable</div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="signature-box">
-                    <div class="sig-line"></div>
-                    <div class="sig-name">{{ ujier or 'Ujier en Turno' }}</div>
-                    <div class="sig-role">Firma del Ujier Responsable</div>
-                </div>
-            {% endif %}
+        <div class="signature-section" id="signatureSection">
+            <!-- Se renderiza de forma interactiva y dinámica -->
         </div>
     </div>
 
     <script>
+        let signers = {{ firmantes_iniciales|tojson }};
+        if (!Array.isArray(signers) || signers.length === 0) {
+            const defaultUjier = {{ ujier|tojson }} || 'Ujier en Turno';
+            signers = [defaultUjier];
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        function renderSigners() {
+            // 1. Renderizar chips interactivos en toolbar
+            const container = document.getElementById('signersChips');
+            if (container) {
+                container.innerHTML = '';
+                signers.forEach((s, idx) => {
+                    const chip = document.createElement('span');
+                    chip.className = 'signer-chip';
+                    chip.innerHTML = `👤 ${escapeHtml(s)} <span class="chip-del" onclick="removeSigner(${idx})" title="Quitar de la firma">✕</span>`;
+                    container.appendChild(chip);
+                });
+            }
+
+            // 2. Actualizar texto de Ujier en la cabecera de datos
+            const infoVal = document.getElementById('ujierInfoValue');
+            if (infoVal) {
+                infoVal.textContent = signers.length ? signers.join(' · ') : 'No asignado';
+            }
+
+            // 3. Renderizar cajas de firma en la hoja
+            const sigSec = document.getElementById('signatureSection');
+            if (sigSec) {
+                sigSec.innerHTML = '';
+                if (signers.length === 0) {
+                    sigSec.innerHTML = `
+                        <div class="signature-box">
+                            <div class="sig-line"></div>
+                            <div class="sig-name">Ujier en Turno</div>
+                            <div class="sig-role">Firma del Ujier Responsable</div>
+                        </div>
+                    `;
+                } else {
+                    signers.forEach(s => {
+                        const box = document.createElement('div');
+                        box.className = 'signature-box';
+                        box.innerHTML = `
+                            <div class="sig-line"></div>
+                            <div class="sig-name">${escapeHtml(s)}</div>
+                            <div class="sig-role">Firma del Ujier Responsable</div>
+                        `;
+                        sigSec.appendChild(box);
+                    });
+                }
+            }
+        }
+
+        function addSignerFromSelect(val) {
+            if (!val || !val.trim()) return;
+            const clean = val.trim();
+            if (!signers.includes(clean)) {
+                signers.push(clean);
+                renderSigners();
+            }
+            const sel = document.getElementById('ujierSelector');
+            if (sel) sel.value = '';
+        }
+
+        function addCustomSigner() {
+            const name = prompt('Nombre del Ujier para incluir en la firma:');
+            if (name && name.trim()) {
+                const clean = name.trim();
+                if (!signers.includes(clean)) {
+                    signers.push(clean);
+                    renderSigners();
+                }
+            }
+        }
+
+        function removeSigner(idx) {
+            signers.splice(idx, 1);
+            renderSigners();
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                window.print();
-            }, 350);
+            renderSigners();
         });
     </script>
 </body>
