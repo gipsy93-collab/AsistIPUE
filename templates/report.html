@@ -332,6 +332,15 @@
             container.classList.add('animate-sweep');
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadAnalytics('ano');
             loadFriends();
@@ -363,7 +372,7 @@
                     return `
                         <div class="ranking-item">
                             <div class="ranking-item-header">
-                                <span>${c.culto}</span>
+                                <span>${escapeHtml(c.culto)}</span>
                                 <span><strong>${c.total}</strong> asistencias</span>
                             </div>
                             <div class="progress-track">
@@ -455,17 +464,22 @@
 
                 tbody.innerHTML = list.map(f => {
                     const catClass = f.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita';
+                    const nombre = escapeHtml(`${f.nombre} ${f.apellidos}`);
+                    const telefono = escapeHtml(f.telefono || '');
+                    const ultimoCulto = escapeHtml(f.ultimo_culto || '—');
+                    const ultimaFecha = escapeHtml(f.ultima_fecha || '');
+                    const fechaRegistro = escapeHtml(f.fecha_registro || '—');
                     return `
                         <tr>
-                            <td><strong>${f.nombre} ${f.apellidos}</strong></td>
-                            <td><span class="category-tag ${catClass}">${f.categoria}</span></td>
-                            <td>${f.telefono || '<span style="color:var(--text-muted);">Sin teléfono</span>'}</td>
+                            <td><strong>${nombre}</strong></td>
+                            <td><span class="category-tag ${catClass}">${escapeHtml(f.categoria)}</span></td>
+                            <td>${f.telefono ? telefono : '<span style="color:var(--text-muted);">Sin teléfono</span>'}</td>
                             <td><span style="font-weight:700;color:var(--primary-blue);">${f.total_asistencias}</span> culto(s)</td>
-                            <td>${f.ultimo_culto || '—'} <div style="font-size:11px;color:var(--text-muted);">${f.ultima_fecha || ''}</div></td>
-                            <td>${f.fecha_registro || '—'}</td>
+                            <td>${ultimoCulto} <div style="font-size:11px;color:var(--text-muted);">${ultimaFecha}</div></td>
+                            <td>${fechaRegistro}</td>
                             <td>
                                 ${f.whatsapp_link 
-                                    ? `<a href="${f.whatsapp_link}" target="_blank" class="btn-whatsapp">💬 Enviar WhatsApp</a>`
+                                    ? `<a href="${escapeHtml(f.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp">💬 Enviar WhatsApp</a>`
                                     : `<span style="color:var(--text-muted);font-size:12px;">Sin WhatsApp</span>`}
                             </td>
                         </tr>

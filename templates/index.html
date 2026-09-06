@@ -57,7 +57,15 @@
             <div class="input-pill">
                 <label>Culto:</label>
                 <select id="serviceCulto" onchange="onServiceContextChange()">
-                    <option value="">Cargando cultos...</option>
+                    <option value="Escuela Dominical">Escuela Dominical</option>
+                    <option value="Oración y Enseñanza">Oración y Enseñanza</option>
+                    <option value="Jóvenes Generación Vida">Jóvenes Generación Vida</option>
+                    <option value="Culto General / Especial">Culto General / Especial</option>
+                    <option value="Culto de Misiones">Culto de Misiones</option>
+                    <option value="Culto de Damas Dorcas">Culto de Damas Dorcas</option>
+                    <option value="Culto de Caballeros">Culto de Caballeros</option>
+                    <option value="Vigilia de Oración">Vigilia de Oración</option>
+                    <option value="Ayuno y Oración">Ayuno y Oración</option>
                 </select>
             </div>
 
@@ -335,6 +343,34 @@
         let activeDate = '';
         let activeCulto = '';
         let activeUjier = '';
+        let currentResults = [];
+        let memberBeingEdited = null;
+        let modalSearchDebounce = null;
+        let modalResults = [];
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function selectMemberByIdx(idx) {
+            const m = currentResults[idx];
+            if (m) selectMember(m);
+        }
+
+        function openEditModalByIdx(idx) {
+            const m = currentResults[idx];
+            if (m) openEditModal(m);
+        }
+
+        function populateEditFormByIdx(idx) {
+            const m = modalResults[idx];
+            if (m) populateEditForm(m);
+        }
 
         function triggerLogoEffect() {
             const container = document.getElementById('churchLogoContainer');
@@ -354,31 +390,68 @@
             });
         });
 
+        // Sugerencia de culto según el día de la semana del dispositivo (0=domingo)
+        function suggestCultoPorDia(weekday) {
+            if (weekday === 0) return 'Escuela Dominical';        // Domingo
+            if (weekday === 2 || weekday === 4) return 'Oración y Enseñanza'; // Martes o Jueves
+            if (weekday === 6) return 'Jóvenes Generación Vida';  // Sábado
+            return 'Culto General / Especial';
+        }
+
+        // Fecha del reloj del dispositivo (fuente de verdad del usuario)
+        function deviceToday() {
+            const n = new Date();
+            return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+        }
+
         async function initApp() {
+            // 1. Inicialización síncrona instantánea con fecha y culto sugerido del dispositivo
+            const n = new Date();
+            const fechaLarga = n.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const fechaDisplay = fechaLarga.charAt(0).toUpperCase() + fechaLarga.slice(1);
+            document.getElementById('currentDateDisplay').innerHTML = `📅 ${fechaDisplay}`;
+            document.getElementById('serviceDate').value = deviceToday();
+            activeDate = deviceToday();
+
+            const cultoSugerido = suggestCultoPorDia(n.getDay());
+            const selectCulto = document.getElementById('serviceCulto');
+            if (selectCulto) {
+                const matchedOption = selectCulto.querySelector(`option[value="${cultoSugerido}"]`);
+                if (matchedOption) {
+                    matchedOption.selected = true;
+                }
+                activeCulto = selectCulto.value;
+            }
+
+            // 2. Consulta de información dinámica al servidor
             try {
                 const res = await fetch('/api/info');
-                const data = await res.json();
-
-                const d = data.date_info;
-                document.getElementById('currentDateDisplay').innerHTML = `📅 ${d.fecha_larga}`;
-                document.getElementById('serviceDate').value = d.fecha;
-                activeDate = d.fecha;
-
-                const selectCulto = document.getElementById('serviceCulto');
-                selectCulto.innerHTML = '';
-                data.cultos.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c;
-                    opt.textContent = c;
-                    if (c === d.culto_sugerido) opt.selected = true;
-                    selectCulto.appendChild(opt);
-                });
-                activeCulto = selectCulto.value;
-
-                updateUjieresDropdown(data.ujieres || []);
-                await updateSummary();
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.cultos && data.cultos.length > 0) {
+                        selectCulto.innerHTML = '';
+                        data.cultos.forEach(c => {
+                            const opt = document.createElement('option');
+                            opt.value = c;
+                            opt.textContent = c;
+                            if (c === cultoSugerido) opt.selected = true;
+                            selectCulto.appendChild(opt);
+                        });
+                        activeCulto = selectCulto.value;
+                    }
+                    if (data && data.ujieres) {
+                        updateUjieresDropdown(data.ujieres);
+                    }
+                }
             } catch (err) {
-                console.error('Error inicializando app:', err);
+                console.warn('Servidor no disponible para catálogo dinámico, usando catálogo local:', err);
+            }
+
+            // 3. Carga de métricas en vivo
+            try {
+                await updateSummary();
+            } catch (e) {
+                console.warn('Error actualizando métricas:', e);
             }
         }
 
@@ -452,19 +525,30 @@
         }
 
         async function saveStreamViewers() {
-            const num = parseInt(document.getElementById('streamViewers').value || 0);
-            await fetch('/api/attendance/stream', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    fecha: activeDate,
-                    culto: activeCulto,
-                    ujier: activeUjier,
-                    espectadores: num
-                })
-            });
-            await updateSummary();
-            alert('Aforo de transmisión online actualizado');
+            const raw = document.getElementById('streamViewers').value;
+            const num = Math.max(0, parseInt(raw, 10) || 0);
+            if (!activeDate || !activeCulto) {
+                alert('Seleccione fecha y culto antes de guardar el aforo online');
+                return;
+            }
+            try {
+                const res = await fetch('/api/attendance/stream', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        fecha: activeDate,
+                        culto: activeCulto,
+                        ujier: activeUjier,
+                        espectadores: num
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) { alert(data.error || 'Error al guardar aforo'); return; }
+                await updateSummary();
+                alert('Aforo de transmisión online actualizado');
+            } catch (e) {
+                alert('Error al guardar aforo');
+            }
         }
 
         // 3. BÚSQUEDA INTELIGENTE
@@ -491,32 +575,35 @@
                 }
 
                 countEl.textContent = `${members.length} resultado(s)`;
-                resultsList.innerHTML = members.map(m => {
+                currentResults = members;
+                resultsList.innerHTML = members.map((m, idx) => {
                     const isAttended = m.asistio;
                     const catClass = m.categoria === 'Hermano' ? 'tag-hermano' : (m.categoria === 'Niño' ? 'tag-nino' : (m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
                     const dotColor = m.categoria === 'Hermano' ? '#0284c7' : (m.categoria === 'Niño' ? '#d97706' : (m.categoria === 'Amigo' ? '#059669' : '#7e22ce'));
                     const isSelected = selectedMember && selectedMember.id === m.id ? 'selected' : '';
                     const isInactive = m.estado === 'Inactivo';
+                    const fullName = escapeHtml(`${m.nombre} ${m.apellidos}`);
+                    const telefono = escapeHtml(m.telefono || '');
                     
                     return `
-                        <div class="member-item ${isAttended ? 'attended-item' : ''} ${isSelected}" onclick='selectMember(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
+                        <div class="member-item ${isAttended ? 'attended-item' : ''} ${isSelected}" onclick="selectMemberByIdx(${idx})">
                             <div>
-                                <div class="member-name">${m.nombre} ${m.apellidos}</div>
+                                <div class="member-name">${fullName}</div>
                                 <div class="member-meta">
                                     <span class="category-tag ${catClass}">
                                         <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};display:inline-block;"></span>
-                                        ${m.categoria}
+                                        ${escapeHtml(m.categoria)}
                                     </span>
                                     ${isInactive ? '<span class="category-tag tag-inactivo">Desagregado</span>' : ''}
-                                    ${m.telefono ? ` · 📞 ${m.telefono}` : ''}
+                                    ${m.telefono ? ` · 📞 ${telefono}` : ''}
                                     <span>· ${m.total_asistencias || 0} asist.</span>
                                 </div>
                             </div>
                             <div style="display:flex;align-items:center;gap:8px;">
                                 ${isAttended 
-                                    ? `<span class="attended-badge">✓ Asistió (${m.hora_asistencia})</span>` 
+                                    ? `<span class="attended-badge">✓ Asistió (${escapeHtml(m.hora_asistencia)})</span>` 
                                     : `<span style="color:var(--text-muted);font-size:12px;font-weight:600;">Pendiente</span>`}
-                                <button type="button" class="btn-row-edit" onclick='event.stopPropagation(); openEditModal(${JSON.stringify(m).replace(/'/g, "&apos;")})' title="Modificar datos o desagregar">✏️ Modificar</button>
+                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEditModalByIdx(${idx})" title="Modificar datos o desagregar">✏️ Modificar</button>
                             </div>
                         </div>
                     `;
@@ -622,6 +709,10 @@
                     
                     const q = document.getElementById('searchInput').value;
                     if (q.length >= 2) doSearch(q);
+                } else {
+                    alert(data.error || 'Error al marcar asistencia');
+                    btn.disabled = false;
+                    btn.textContent = '✓ Registrar Asistencia';
                 }
             } catch (e) {
                 alert('Error al marcar asistencia');
@@ -632,21 +723,27 @@
 
         async function unmarkSelectedAttendance() {
             if (!selectedMember || !confirm('¿Deseas anular la marca de asistencia de este culto?')) return;
-            await fetch('/api/attendance/unmark', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    member_id: selectedMember.id,
-                    fecha: activeDate,
-                    culto: activeCulto
-                })
-            });
-            selectedMember.asistio = false;
-            selectedMember.hora_asistencia = '';
-            showDetail(selectedMember);
-            await updateSummary();
-            const q = document.getElementById('searchInput').value;
-            if (q.length >= 2) doSearch(q);
+            try {
+                const res = await fetch('/api/attendance/unmark', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        member_id: selectedMember.id,
+                        fecha: activeDate,
+                        culto: activeCulto
+                    })
+                });
+                const data = await res.json();
+                if (data.status !== 'ok') { alert(data.error || 'Error al anular asistencia'); return; }
+                selectedMember.asistio = false;
+                selectedMember.hora_asistencia = '';
+                showDetail(selectedMember);
+                await updateSummary();
+                const q = document.getElementById('searchInput').value;
+                if (q.length >= 2) doSearch(q);
+            } catch (e) {
+                alert('Error al anular asistencia');
+            }
         }
 
         // RESPUESTA A LA ALERTA DE PROMOCIÓN DE VISITA
@@ -670,6 +767,8 @@
                 if (action === 'promote') {
                     alert(`${selectedMember.nombre} ha sido promovido(a) a Amigo(a) exitosamente.`);
                 }
+            } else {
+                alert(data.error || 'Error al procesar la promoción');
             }
         }
 
@@ -726,11 +825,13 @@
                     document.getElementById('searchInput').value = nom;
                     await doSearch(nom);
                     if (data.member) {
-                        data.member.asistio = autoCheck;
+                        data.member.asistio = autoCheck && !!activeCulto;
                         data.member.hora_asistencia = new Date().toLocaleTimeString();
-                        data.member.total_asistencias = 1;
+                        data.member.total_asistencias = autoCheck && !!activeCulto ? 1 : 0;
                         selectMember(data.member);
                     }
+                } else {
+                    alert(data.error || 'Error al guardar el nuevo asistente');
                 }
             } catch (e) {
                 alert('Error al guardar el nuevo asistente');
@@ -738,9 +839,6 @@
         }
 
         // 6. MODAL MODIFICACIONES Y DESAGREGACIÓN
-        let memberBeingEdited = null;
-        let modalSearchDebounce = null;
-
         function openGlobalManageModal() {
             openEditModal(selectedMember || null);
         }
@@ -789,9 +887,10 @@
                     resDiv.style.display = 'block';
                     return;
                 }
-                resDiv.innerHTML = list.map(m => `
-                    <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:13px;display:flex;justify-content:space-between;align-items:center;" onclick='populateEditForm(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
-                        <span><strong>${m.nombre} ${m.apellidos}</strong> (${m.categoria})</span>
+                modalResults = list;
+                resDiv.innerHTML = list.map((m, idx) => `
+                    <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:13px;display:flex;justify-content:space-between;align-items:center;" onclick="populateEditFormByIdx(${idx})">
+                        <span><strong>${escapeHtml(m.nombre)} ${escapeHtml(m.apellidos)}</strong> (${escapeHtml(m.categoria)})</span>
                         <span style="font-size:11px;color:var(--primary-blue);font-weight:700;">Seleccionar 👉</span>
                     </div>
                 `).join('');
@@ -836,6 +935,8 @@
                     const q = document.getElementById('searchInput').value;
                     if (q.length >= 2) doSearch(q);
                     alert(`Datos de ${data.member.nombre} actualizados correctamente.`);
+                } else {
+                    alert(data.error || 'Error al actualizar datos.');
                 }
             } catch (e) {
                 alert('Error al actualizar datos.');

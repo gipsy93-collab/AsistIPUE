@@ -34,7 +34,7 @@ def init_church_sheet(sheet_id):
         # 1. Pestaña Miembros
         try:
             ws_m = sh.worksheet('Miembros')
-        except:
+        except Exception:
             ws_m = sh.add_worksheet('Miembros', 1000, 10)
             
         m_headers = ['ID', 'Categoria', 'Genero', 'Nombre', 'Apellidos', 'Telefono', 'Fecha_Registro', 'Estado']
@@ -61,21 +61,21 @@ def init_church_sheet(sheet_id):
         # 2. Pestaña Asistencia
         try:
             ws_a = sh.worksheet('Asistencia')
-        except:
+        except Exception:
             ws_a = sh.add_worksheet('Asistencia', 2000, 12)
             ws_a.append_row(['ID_Registro', 'Fecha', 'Culto', 'Hora', 'ID_Miembro', 'Nombre_Completo', 'Categoria', 'Genero', 'Ujier', 'Tipo_Asistencia'])
             
         # 3. Pestaña Cultos_Metricas
         try:
             ws_cm = sh.worksheet('Cultos_Metricas')
-        except:
+        except Exception:
             ws_cm = sh.add_worksheet('Cultos_Metricas', 1000, 10)
             ws_cm.append_row(['Fecha', 'Culto', 'Ujier', 'Presenciales', 'Hermanos', 'Ninos', 'Amigos', 'Transmision_Online', 'Total_Alcance', 'Timestamp'])
             
         # 4. Pestaña Ujieres
         try:
             ws_u = sh.worksheet('Ujieres')
-        except:
+        except Exception:
             ws_u = sh.add_worksheet('Ujieres', 500, 5)
             ws_u.append_row(['Nombre_Ujier', 'Fecha_Primer_Registro', 'Total_Servicios'])
             
