@@ -1499,7 +1499,7 @@
       "nombre_completo": "PRUEBA UNO",
       "categoria": "Visita",
       "genero": "Hombre",
-      "ujier": "PRUEBA 1",
+      "ujier": "Martín Pérez",
       "tipo_asistencia": "Presencial"
     }
   ],
@@ -1525,7 +1525,6 @@
   },
   "ujieres": [
     "Claudia Ortiz",
-    "Martín Pérez",
-    "Prueba 1"
+    "Martín Pérez"
   ]
 }
