@@ -80,16 +80,28 @@ def get_gc():
         import gspread
         from google.oauth2.service_account import Credentials
         scopes = ['https://www.googleapis.com/auth/spreadsheets']
-        creds_json = os.environ.get('GOOGLE_CREDENTIALS')
+        creds_json = os.environ.get('GOOGLE_CREDENTIALS') or os.environ.get('GOOGLE_CREDENTIALS_BASE64')
         if creds_json:
+            creds_json = creds_json.strip()
+            # En caso de que se pase en base64
+            if not creds_json.startswith('{'):
+                import base64
+                creds_json = base64.b64decode(creds_json).decode('utf-8')
             creds_dict = json.loads(creds_json)
+            # Normalizar saltos de línea escapados en private_key
+            if 'private_key' in creds_dict and '\\n' in creds_dict['private_key']:
+                creds_dict['private_key'] = creds_dict['private_key'].replace('\\n', '\n')
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         else:
-            local_creds = os.path.join(os.path.dirname(__file__), '..', '..', 'tinkuy-ciencia-transmedia-4938ed06a087.json')
-            if not os.path.exists(local_creds):
-                local_creds = os.path.join(os.path.dirname(__file__), '..', 'credentials.json')
-            if os.path.exists(local_creds):
-                creds = Credentials.from_service_account_file(local_creds, scopes=scopes)
+            possible_paths = [
+                os.path.join(os.path.dirname(__file__), '..', '..', 'tinkuy-ciencia-transmedia-4938ed06a087.json'),
+                os.path.join(os.path.dirname(__file__), '..', 'credentials.json'),
+                os.path.join(os.path.dirname(__file__), 'credentials.json'),
+                os.path.join(os.path.dirname(__file__), '..', 'data', 'credentials.json')
+            ]
+            creds_file = next((p for p in possible_paths if os.path.exists(p)), None)
+            if creds_file:
+                creds = Credentials.from_service_account_file(creds_file, scopes=scopes)
             else:
                 return None
         return gspread.authorize(creds)
@@ -134,26 +146,154 @@ def _normalize_db(db):
         db['metricas_cultos'] = {}
     return db
 
+def is_hermano(cat):
+    """Reconoce como hermano cualquier variante válida como Hermano, Hermana, Miembro activo o Miembro."""
+    c = (cat or '').strip().lower()
+    return c in ('hermano', 'hermana', 'miembro activo', 'miembro', 'hermano/a', 'activo')
+
+def get_or_create_ujieres_ws(sh):
+    if not sh:
+        return None
+    try:
+        return sh.worksheet('Ujieres')
+    except Exception:
+        try:
+            ws = sh.add_worksheet('Ujieres', 500, 5)
+            ws.append_row(['Nombre_Ujier', 'Fecha_Primer_Registro', 'Total_Servicios'])
+            return ws
+        except Exception as e:
+            print(f'Error creando hoja Ujieres en Sheets: {e}')
+            return None
+
+def restore_db_from_sheets(target_db):
+    """Reconstruye atómicamente la base local desde Google Sheets sin duplicaciones."""
+    sh = get_sheet()
+    if not sh:
+        return False
+    
+    new_miembros = []
+    new_asistencias = []
+    new_metricas = {}
+    new_ujieres = []
+
+    try:
+        ws_m = sh.worksheet('Miembros')
+        for r in ws_m.get_all_records():
+            m_id = str(r.get('ID', '')).strip()
+            if not m_id:
+                continue
+            cat = str(r.get('Categoria', 'Hermano')).strip() or 'Hermano'
+            new_miembros.append({
+                'id': m_id,
+                'categoria': cat,
+                'genero': str(r.get('Genero', 'Hombre')).strip() or 'Hombre',
+                'nombre': str(r.get('Nombre', '')).strip(),
+                'apellidos': str(r.get('Apellidos', '')).strip(),
+                'telefono': str(r.get('Telefono', '')).strip(),
+                'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
+                'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo'
+            })
+    except Exception as e:
+        print(f'Restore Miembros: {e}')
+
+    try:
+        ws_a = sh.worksheet('Asistencia')
+        for r in ws_a.get_all_records():
+            rec_id = str(r.get('ID_Registro', '')).strip()
+            if not rec_id:
+                continue
+            new_asistencias.append({
+                'id': rec_id,
+                'fecha': str(r.get('Fecha', '')).strip(),
+                'culto': str(r.get('Culto', '')).strip(),
+                'hora': str(r.get('Hora', '')).strip(),
+                'member_id': str(r.get('ID_Miembro', '')).strip(),
+                'nombre_completo': str(r.get('Nombre_Completo', '')).strip(),
+                'categoria': str(r.get('Categoria', '')).strip(),
+                'genero': str(r.get('Genero', '')).strip(),
+                'ujier': str(r.get('Ujier', '')).strip(),
+                'tipo_asistencia': str(r.get('Tipo_Asistencia', 'Presencial')).strip() or 'Presencial'
+            })
+    except Exception as e:
+        print(f'Restore Asistencia: {e}')
+
+    try:
+        ws_c = sh.worksheet('Cultos_Metricas')
+        for r in ws_c.get_all_records():
+            f = str(r.get('Fecha', '')).strip()
+            c = str(r.get('Culto', '')).strip()
+            key = f"{f}_{c}"
+            if key != '_':
+                new_metricas[key] = {
+                    'fecha': f,
+                    'culto': c,
+                    'ujier': str(r.get('Ujier', '')).strip(),
+                    'transmision_online': to_int(r.get('Transmision_Online', 0))
+                }
+    except Exception as e:
+        print(f'Restore Metricas: {e}')
+
+    try:
+        ws_u = get_or_create_ujieres_ws(sh)
+        if ws_u:
+            for r in ws_u.get_all_records():
+                nom = str(r.get('Nombre_Ujier', '')).strip()
+                if nom and nom not in new_ujieres:
+                    new_ujieres.append(nom)
+            new_ujieres.sort()
+    except Exception as e:
+        print(f'Restore Ujieres: {e}')
+
+    if new_miembros or new_asistencias or new_ujieres:
+        target_db['miembros'] = new_miembros
+        target_db['asistencias'] = new_asistencias
+        target_db['metricas_cultos'] = new_metricas
+        if new_ujieres:
+            target_db['ujieres'] = new_ujieres
+        print(f'Restored desde Sheets: {len(new_miembros)} miembros, {len(new_asistencias)} asistencias, {len(new_ujieres)} ujieres')
+        return True
+    return False
+
+LAST_SYNC_TIME = None
+SYNC_INTERVAL_SECONDS = 30
+
+def sync_from_sheets_if_needed(force=False):
+    global LAST_SYNC_TIME, db
+    now = datetime.now()
+    if not force and LAST_SYNC_TIME and (now - LAST_SYNC_TIME).total_seconds() < SYNC_INTERVAL_SECONDS:
+        return False
+    sh = get_sheet()
+    if not sh:
+        return False
+    try:
+        success = restore_db_from_sheets(db)
+        if success:
+            LAST_SYNC_TIME = now
+            save_db(db)
+            return True
+    except Exception as e:
+        print(f'Error en sync desde Sheets: {e}')
+    return False
+
 def load_db():
+    db = _empty_db()
     if os.path.exists(LOCAL_DB_FILE):
         try:
             with open(LOCAL_DB_FILE, 'r', encoding='utf-8') as f:
-                return _normalize_db(json.load(f))
+                db = _normalize_db(json.load(f))
         except Exception as e:
             print(f'Error leyendo local_db.json: {e}')
 
-    db = _empty_db()
-
-    # Arranque frío en serverless: restaurar SIEMPRE desde Sheets.
-    # Los ujieres y asistencias solo persisten ahí cuando el disco local
-    # es efímero; condicionar la restauración a que la base esté vacía
-    # hacía que initial_members.json la bloqueara y se perdieran.
+    # Intentar restaurar datos vivos desde Google Sheets
     try:
-        restore_db_from_sheets(db)
+        synced = restore_db_from_sheets(db)
+        if synced:
+            save_db(db)
+            return db
     except Exception as e:
-        print(f'No se pudo restaurar desde Sheets: {e}')
+        print(f'No se pudo restaurar desde Sheets en load_db: {e}')
 
-    # Semilla de miembros solo si Sheets no aportó ninguno (p.ej. sin credenciales)
+    # Semilla de miembros solo si ni Sheets ni local aportaron miembros
     if not db['miembros'] and os.path.exists(INITIAL_MEMBERS_FILE):
         try:
             with open(INITIAL_MEMBERS_FILE, 'r', encoding='utf-8') as f:
@@ -174,68 +314,6 @@ def save_db(db):
         os.replace(tmp_file, LOCAL_DB_FILE)
     except Exception as e:
         print(f'Error guardando local_db.json: {e}')
-
-def restore_db_from_sheets(db):
-    """Reconstruye la base local desde Google Sheets tras un arranque frío."""
-    sh = get_sheet()
-    if not sh:
-        return False
-    try:
-        ws_m = sh.worksheet('Miembros')
-        for r in ws_m.get_all_records():
-            db['miembros'].append({
-                'id': str(r.get('ID', '')),
-                'categoria': r.get('Categoria', ''),
-                'genero': r.get('Genero', ''),
-                'nombre': str(r.get('Nombre', '')),
-                'apellidos': str(r.get('Apellidos', '')),
-                'telefono': str(r.get('Telefono', '')),
-                'fecha_registro': str(r.get('Fecha_Registro', '')),
-                'estado': r.get('Estado', 'Activo') or 'Activo'
-            })
-    except Exception as e:
-        print(f'Restore Miembros: {e}')
-    try:
-        ws_a = sh.worksheet('Asistencia')
-        for r in ws_a.get_all_records():
-            db['asistencias'].append({
-                'id': str(r.get('ID_Registro', '')),
-                'fecha': str(r.get('Fecha', '')),
-                'culto': str(r.get('Culto', '')),
-                'hora': str(r.get('Hora', '')),
-                'member_id': str(r.get('ID_Miembro', '')),
-                'nombre_completo': str(r.get('Nombre_Completo', '')),
-                'categoria': r.get('Categoria', ''),
-                'genero': r.get('Genero', ''),
-                'ujier': str(r.get('Ujier', '')),
-                'tipo_asistencia': r.get('Tipo_Asistencia', 'Presencial') or 'Presencial'
-            })
-    except Exception as e:
-        print(f'Restore Asistencia: {e}')
-    try:
-        ws_c = sh.worksheet('Cultos_Metricas')
-        for r in ws_c.get_all_records():
-            key = f"{r.get('Fecha', '')}_{r.get('Culto', '')}"
-            if key != '_':
-                db['metricas_cultos'][key] = {
-                    'fecha': str(r.get('Fecha', '')),
-                    'culto': str(r.get('Culto', '')),
-                    'ujier': str(r.get('Ujier', '')),
-                    'transmision_online': to_int(r.get('Transmision_Online', 0))
-                }
-    except Exception as e:
-        print(f'Restore Metricas: {e}')
-    try:
-        ws_u = sh.worksheet('Ujieres')
-        for r in ws_u.get_all_records():
-            nom = str(r.get('Nombre_Ujier', '')).strip()
-            if nom and nom not in db['ujieres']:
-                db['ujieres'].append(nom)
-        db['ujieres'].sort()
-    except Exception as e:
-        print(f'Restore Ujieres: {e}')
-    print(f'Restored desde Sheets: {len(db["miembros"])} miembros, {len(db["asistencias"])} asistencias')
-    return bool(db['miembros'] or db['asistencias'])
 
 db = load_db()
 
@@ -356,7 +434,8 @@ def sync_sheets_add_ujier(nombre):
     sh = get_sheet()
     if not sh: return
     try:
-        ws = sh.worksheet('Ujieres')
+        ws = get_or_create_ujieres_ws(sh)
+        if not ws: return
         all_v = ws.get_all_values()
         for r in all_v:
             if r and r[0].strip().lower() == nombre.strip().lower():
@@ -369,7 +448,8 @@ def sync_sheets_update_ujier(old_nom, new_nom):
     sh = get_sheet()
     if not sh: return
     try:
-        ws = sh.worksheet('Ujieres')
+        ws = get_or_create_ujieres_ws(sh)
+        if not ws: return
         all_v = ws.get_all_values()
         for i, r in enumerate(all_v):
             if i == 0: continue
@@ -383,7 +463,8 @@ def sync_sheets_delete_ujier(nombre):
     sh = get_sheet()
     if not sh: return
     try:
-        ws = sh.worksheet('Ujieres')
+        ws = get_or_create_ujieres_ws(sh)
+        if not ws: return
         all_v = ws.get_all_values()
         for i in range(len(all_v) - 1, 0, -1):
             if all_v[i] and all_v[i][0].strip().lower() == nombre.strip().lower():
@@ -440,11 +521,30 @@ def report_page():
 # =========================================================
 @app.route('/api/info')
 def api_info():
+    sync_from_sheets_if_needed(force=False)
+    sh = get_sheet()
     return jsonify({
         'date_info': get_current_date_info(),
         'cultos': [c['nombre'] for c in CULTOS_CATALOG],
         'ujieres': db.get('ujieres', []),
-        'sheet_configured': bool(resolve_sheet_id())
+        'sheet_configured': bool(resolve_sheet_id()),
+        'sheet_connected': bool(sh),
+        'last_sync': LAST_SYNC_TIME.strftime('%Y-%m-%d %H:%M:%S') if LAST_SYNC_TIME else None
+    })
+
+@app.route('/api/sync-sheets', methods=['GET', 'POST'])
+def api_sync_sheets():
+    success = sync_from_sheets_if_needed(force=True)
+    sh = get_sheet()
+    return jsonify({
+        'status': 'ok' if (success or sh) else 'error',
+        'sheet_connected': bool(sh),
+        'sheet_id': resolve_sheet_id(),
+        'miembros_count': len(db.get('miembros', [])),
+        'ujieres_count': len(db.get('ujieres', [])),
+        'asistencias_count': len(db.get('asistencias', [])),
+        'last_sync': LAST_SYNC_TIME.strftime('%Y-%m-%d %H:%M:%S') if LAST_SYNC_TIME else None,
+        'message': 'Sincronizado con Google Sheets con éxito' if success else ('Error: no se pudo conectar a Google Sheets. Verifique la variable GOOGLE_CREDENTIALS en Vercel.' if not sh else 'Datos ya al día con Google Sheets')
     })
 
 @app.route('/api/cultos/search')
@@ -621,7 +721,7 @@ def api_attendance_summary():
     
     culto_asist = [a for a in db.get('asistencias', []) if a.get('fecha') == fecha and a.get('culto') == culto]
     
-    hermanos = sum(1 for a in culto_asist if a.get('categoria') == 'Hermano')
+    hermanos = sum(1 for a in culto_asist if is_hermano(a.get('categoria')))
     ninos = sum(1 for a in culto_asist if a.get('categoria') == 'Niño')
     amigos = sum(1 for a in culto_asist if a.get('categoria') == 'Amigo')
     visitas = sum(1 for a in culto_asist if a.get('categoria') == 'Visita')
@@ -688,7 +788,7 @@ def api_attendance_mark():
     if key not in db['metricas_cultos']:
         db['metricas_cultos'][key] = {'fecha': fecha, 'culto': culto, 'ujier': ujier, 'transmision_online': 0}
     culto_asist = [a for a in db['asistencias'] if a.get('fecha') == fecha and a.get('culto') == culto]
-    h = sum(1 for a in culto_asist if a.get('categoria') == 'Hermano')
+    h = sum(1 for a in culto_asist if is_hermano(a.get('categoria')))
     n = sum(1 for a in culto_asist if a.get('categoria') == 'Niño')
     am = sum(1 for a in culto_asist if a.get('categoria') == 'Amigo')
     vi = sum(1 for a in culto_asist if a.get('categoria') == 'Visita')
@@ -733,7 +833,7 @@ def api_attendance_unmark():
     key = f"{fecha}_{culto}"
     if key in db['metricas_cultos']:
         culto_asist = [a for a in db['asistencias'] if a.get('fecha') == fecha and a.get('culto') == culto]
-        h = sum(1 for a in culto_asist if a.get('categoria') == 'Hermano')
+        h = sum(1 for a in culto_asist if is_hermano(a.get('categoria')))
         n = sum(1 for a in culto_asist if a.get('categoria') == 'Niño')
         am = sum(1 for a in culto_asist if a.get('categoria') == 'Amigo')
         vi = sum(1 for a in culto_asist if a.get('categoria') == 'Visita')
@@ -769,7 +869,7 @@ def api_attendance_stream():
         db['metricas_cultos'][key] = {'fecha': fecha, 'culto': culto, 'ujier': ujier}
         
     culto_asist = [a for a in db['asistencias'] if a.get('fecha') == fecha and a.get('culto') == culto]
-    h = sum(1 for a in culto_asist if a.get('categoria') == 'Hermano')
+    h = sum(1 for a in culto_asist if is_hermano(a.get('categoria')))
     n = sum(1 for a in culto_asist if a.get('categoria') == 'Niño')
     am = sum(1 for a in culto_asist if a.get('categoria') == 'Amigo')
     vi = sum(1 for a in culto_asist if a.get('categoria') == 'Visita')
@@ -871,7 +971,7 @@ def api_members_new():
         if key not in db['metricas_cultos']:
             db['metricas_cultos'][key] = {'fecha': fecha_reg, 'culto': culto, 'ujier': ujier, 'transmision_online': 0}
         culto_asist = [a for a in db['asistencias'] if a.get('fecha') == fecha_reg and a.get('culto') == culto]
-        h = sum(1 for a in culto_asist if a.get('categoria') == 'Hermano')
+        h = sum(1 for a in culto_asist if is_hermano(a.get('categoria')))
         n = sum(1 for a in culto_asist if a.get('categoria') == 'Niño')
         am = sum(1 for a in culto_asist if a.get('categoria') == 'Amigo')
         vi = sum(1 for a in culto_asist if a.get('categoria') == 'Visita')
@@ -925,8 +1025,8 @@ def api_reports_analytics():
     promedio_por_culto = round(total_asistencias / cultos_unicos, 1) if cultos_unicos > 0 else 0
     
     # Desglose por género y categoría
-    hombres = sum(1 for _, a in filtered if a.get('categoria') == 'Hermano' and a.get('genero') == 'Hombre')
-    mujeres = sum(1 for _, a in filtered if a.get('categoria') == 'Hermano' and a.get('genero') == 'Mujer')
+    hombres = sum(1 for _, a in filtered if is_hermano(a.get('categoria')) and a.get('genero') == 'Hombre')
+    mujeres = sum(1 for _, a in filtered if is_hermano(a.get('categoria')) and a.get('genero') == 'Mujer')
     ninos = sum(1 for _, a in filtered if a.get('categoria') == 'Niño' or a.get('genero') == 'Niño')
     amigos = sum(1 for _, a in filtered if a.get('categoria') == 'Amigo')
     visitas = sum(1 for _, a in filtered if a.get('categoria') == 'Visita')
@@ -1080,7 +1180,7 @@ def api_reports_export_culto_csv():
     metric = db.get('metricas_cultos', {}).get(key, {})
     asistencias_culto = [a for a in db.get('asistencias', []) if a.get('fecha') == fecha and a.get('culto') == culto]
     
-    hermanos = sum(1 for a in asistencias_culto if a.get('categoria') == 'Hermano')
+    hermanos = sum(1 for a in asistencias_culto if is_hermano(a.get('categoria')))
     ninos = sum(1 for a in asistencias_culto if a.get('categoria') == 'Niño')
     amigos = sum(1 for a in asistencias_culto if a.get('categoria') == 'Amigo')
     visitas = sum(1 for a in asistencias_culto if a.get('categoria') == 'Visita')
