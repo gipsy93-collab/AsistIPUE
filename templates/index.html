@@ -20,12 +20,20 @@
             </div>
         </div>
         <div class="header-right">
+            <div class="logo-style-switcher" title="Elige la opción visual para el logo de la iglesia">
+                <button type="button" class="btn-style-pill active" id="btnStyleOpt1" onclick="switchLogoOption('option-1')">✨ Opción 1: Oro Glass</button>
+                <button type="button" class="btn-style-pill" id="btnStyleOpt2" onclick="switchLogoOption('option-2')">💎 Opción 2: 3D Emblema</button>
+            </div>
             <div class="nav-links">
                 <button type="button" class="nav-btn" onclick="openGlobalManageModal()">✏️ Modificar / Desagregar</button>
                 <a href="/report" class="nav-btn">📊 Analítica & Histórico</a>
             </div>
-            <div class="logo-container" title="Iglesia Pentecostal Unida en Europa - Granada">
-                <img src="/static/logo_ipue.jpeg" alt="Logo IPUE Granada" class="church-logo">
+            <div class="logo-wrapper">
+                <div class="logo-container logo-option-1" id="churchLogoContainer" title="IPUE Granada - Haz clic para interactuar" onclick="triggerLogoEffect()">
+                    <div class="logo-shimmer"></div>
+                    <img src="/static/logo_ipue.jpeg" alt="Logo IPUE Granada" class="church-logo">
+                    <span class="logo-subtext">Granada</span>
+                </div>
             </div>
         </div>
     </header>
@@ -58,7 +66,7 @@
 
             <!-- TRANSMISIÓN ONLINE -->
             <div class="input-pill stream-pill" title="Número de espectadores en YouTube / Facebook Live">
-                <label>📺 En Vivo:</label>
+                <label><span class="pulse-dot"></span> En Vivo:</label>
                 <input type="number" id="streamViewers" class="stream-input" min="0" placeholder="0">
                 <button class="btn-stream-save" onclick="saveStreamViewers()" title="Guardar aforo online">Guardar</button>
             </div>
@@ -70,19 +78,19 @@
                 <span>Presentes:</span> <span id="valTotal">0</span>
             </div>
             <div class="metric-chip chip-hermanos" id="chipHermanos" title="Hermanos">
-                <span>Hermanos:</span> <span id="valHermanos">0</span>
+                <span class="dot-chip"></span><span>Hermanos:</span> <span id="valHermanos">0</span>
             </div>
             <div class="metric-chip chip-amigos" id="chipAmigos" title="Amigos Regulares">
-                <span>Amigos:</span> <span id="valAmigos">0</span>
+                <span class="dot-chip"></span><span>Amigos:</span> <span id="valAmigos">0</span>
             </div>
             <div class="metric-chip chip-visitas" id="chipVisitas" title="Visitas / Nuevos">
-                <span>Visitas:</span> <span id="valVisitas">0</span>
+                <span class="dot-chip"></span><span>Visitas:</span> <span id="valVisitas">0</span>
             </div>
             <div class="metric-chip chip-ninos" id="chipNinos" title="Niños">
-                <span>Niños:</span> <span id="valNinos">0</span>
+                <span class="dot-chip"></span><span>Niños:</span> <span id="valNinos">0</span>
             </div>
             <div class="metric-chip chip-online" id="chipOnline" title="Espectadores Transmisión">
-                <span>En Línea:</span> <span id="valOnline">0</span>
+                <span class="dot-chip"></span><span>En Línea:</span> <span id="valOnline">0</span>
             </div>
         </div>
     </section>
@@ -109,6 +117,10 @@
             </div>
 
             <div class="search-input-wrapper">
+                <svg class="search-icon-inside" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
                 <input type="text" 
                        id="searchInput" 
                        class="search-input" 
@@ -140,12 +152,15 @@
 
             <div id="detailContent" style="display: none; height: 100%; flex-direction: column;">
                 <div class="person-header">
-                    <div>
-                        <div class="person-name-big" id="detName">Nombre de la Persona</div>
-                        <span class="person-category-badge" id="detCategory">Hermano</span>
-                        <span class="category-tag tag-inactivo" id="detInactiveBadge" style="display:none;margin-left:6px;">DESAGREGADO</span>
+                    <div class="avatar-badge-row">
+                        <div class="person-avatar" id="detAvatar">👤</div>
+                        <div>
+                            <div class="person-name-big" id="detName">Nombre de la Persona</div>
+                            <span class="person-category-badge" id="detCategory">Hermano</span>
+                            <span class="category-tag tag-inactivo" id="detInactiveBadge" style="display:none;margin-left:6px;">DESAGREGADO</span>
+                        </div>
                     </div>
-                    <button type="button" class="btn-edit-member" onclick="openEditModal(selectedMember)" title="Modificar categoría, datos o desagregar" style="padding: 8px 14px; font-size: 13px; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <button type="button" class="btn-edit-member" onclick="openEditModal(selectedMember)" title="Modificar categoría, datos o desagregar">
                         ✏️ Modificar / Desagregar
                     </button>
                 </div>
@@ -315,8 +330,64 @@
         let activeCulto = '';
         let activeUjier = '';
 
+        // GESTIÓN DEL LOGO INTERACTIVO (+40% TAMAÑO: OPCIÓN 1 Y OPCIÓN 2)
+        function switchLogoOption(option) {
+            const container = document.getElementById('churchLogoContainer');
+            const btn1 = document.getElementById('btnStyleOpt1');
+            const btn2 = document.getElementById('btnStyleOpt2');
+            if (!container) return;
+            
+            if (option === 'option-2') {
+                container.classList.remove('logo-option-1');
+                container.classList.add('logo-option-2');
+                if (btn1) btn1.classList.remove('active');
+                if (btn2) btn2.classList.add('active');
+                localStorage.setItem('ipue_logo_style', 'option-2');
+            } else {
+                container.classList.remove('logo-option-2');
+                container.classList.add('logo-option-1');
+                if (btn2) btn2.classList.remove('active');
+                if (btn1) btn1.classList.add('active');
+                localStorage.setItem('ipue_logo_style', 'option-1');
+            }
+            triggerLogoEffect();
+        }
+
+        function triggerLogoEffect() {
+            const container = document.getElementById('churchLogoContainer');
+            if (!container) return;
+            if (container.classList.contains('logo-option-1')) {
+                container.classList.remove('animate-sweep');
+                void container.offsetWidth; // reflow
+                container.classList.add('animate-sweep');
+            } else {
+                container.style.transform = 'scale(0.96) rotateX(6deg) rotateY(-6deg)';
+                setTimeout(() => {
+                    container.style.transform = '';
+                }, 280);
+            }
+        }
+
         // 1. INICIALIZACIÓN
         document.addEventListener('DOMContentLoaded', async () => {
+            const savedLogo = localStorage.getItem('ipue_logo_style') || 'option-1';
+            switchLogoOption(savedLogo);
+
+            const logoEl = document.getElementById('churchLogoContainer');
+            if (logoEl) {
+                logoEl.addEventListener('mousemove', (e) => {
+                    if (!logoEl.classList.contains('logo-option-2')) return;
+                    const rect = logoEl.getBoundingClientRect();
+                    const x = e.clientX - rect.left - rect.width / 2;
+                    const y = e.clientY - rect.top - rect.height / 2;
+                    logoEl.style.transform = `perspective(600px) rotateX(${-y / 6}deg) rotateY(${x / 6}deg) scale(1.05)`;
+                });
+                logoEl.addEventListener('mouseleave', () => {
+                    if (!logoEl.classList.contains('logo-option-2')) return;
+                    logoEl.style.transform = '';
+                });
+            }
+
             await initApp();
             
             document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -465,6 +536,7 @@
                 resultsList.innerHTML = members.map(m => {
                     const isAttended = m.asistio;
                     const catClass = m.categoria === 'Hermano' ? 'tag-hermano' : (m.categoria === 'Niño' ? 'tag-nino' : (m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
+                    const dotColor = m.categoria === 'Hermano' ? '#0284c7' : (m.categoria === 'Niño' ? '#d97706' : (m.categoria === 'Amigo' ? '#059669' : '#7e22ce'));
                     const isSelected = selectedMember && selectedMember.id === m.id ? 'selected' : '';
                     const isInactive = m.estado === 'Inactivo';
                     
@@ -473,7 +545,10 @@
                             <div>
                                 <div class="member-name">${m.nombre} ${m.apellidos}</div>
                                 <div class="member-meta">
-                                    <span class="category-tag ${catClass}">${m.categoria}</span>
+                                    <span class="category-tag ${catClass}">
+                                        <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};display:inline-block;"></span>
+                                        ${m.categoria}
+                                    </span>
                                     ${isInactive ? '<span class="category-tag tag-inactivo">Desagregado</span>' : ''}
                                     ${m.telefono ? ` · 📞 ${m.telefono}` : ''}
                                     <span>· ${m.total_asistencias || 0} asist.</span>
@@ -482,7 +557,7 @@
                             <div style="display:flex;align-items:center;gap:8px;">
                                 ${isAttended 
                                     ? `<span class="attended-badge">✓ Asistió (${m.hora_asistencia})</span>` 
-                                    : `<span style="color:var(--text-muted);font-size:12px;">Pendiente</span>`}
+                                    : `<span style="color:var(--text-muted);font-size:12px;font-weight:600;">Pendiente</span>`}
                                 <button type="button" class="btn-row-edit" onclick='event.stopPropagation(); openEditModal(${JSON.stringify(m).replace(/'/g, "&apos;")})' title="Modificar datos o desagregar">✏️ Modificar</button>
                             </div>
                         </div>
@@ -504,6 +579,24 @@
             document.getElementById('detailEmpty').style.display = 'none';
             const content = document.getElementById('detailContent');
             content.style.display = 'flex';
+
+            // Avatar con iniciales y color de categoría
+            const nTrim = (m.nombre || '').trim();
+            const aTrim = (m.apellidos || '').trim();
+            const init1 = nTrim.length > 0 ? nTrim[0] : '';
+            const init2 = aTrim.length > 0 ? aTrim[0] : (nTrim.length > 1 ? nTrim[1] : '');
+            const avatarEl = document.getElementById('detAvatar');
+            avatarEl.textContent = (init1 + init2).toUpperCase() || '👤';
+            
+            if (m.categoria === 'Hermano') {
+                avatarEl.style.background = 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)';
+            } else if (m.categoria === 'Niño') {
+                avatarEl.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+            } else if (m.categoria === 'Amigo') {
+                avatarEl.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            } else {
+                avatarEl.style.background = 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)';
+            }
 
             document.getElementById('detName').textContent = `${m.nombre} ${m.apellidos}`;
             const catBadge = document.getElementById('detCategory');
