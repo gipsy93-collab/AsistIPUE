@@ -4373,7 +4373,6 @@ body {
     }
     
     /* Convert modals to flat tabs when active */
-    body[data-active-tab="agregar"] #newMemberModal,
     body[data-active-tab="cumpleanos"] #modalCumpleanos,
     body[data-active-tab="reportes"] #analyticsModal {
         display: block !important;
@@ -4385,7 +4384,6 @@ body {
         overflow: visible !important;
     }
     
-    body[data-active-tab="agregar"] #newMemberModal .modal-card,
     body[data-active-tab="cumpleanos"] #modalCumpleanos .modal-content,
     body[data-active-tab="reportes"] #analyticsModal .analytics-modal-card {
         border-radius: 0 !important;
@@ -4400,7 +4398,6 @@ body {
     }
 
     /* Hide close buttons and overlays */
-    body[data-active-tab="agregar"] #newMemberModal .modal-header button[onclick*="close"],
     body[data-active-tab="cumpleanos"] #modalCumpleanos .cumple-modal-header button[onclick*="close"],
     body[data-active-tab="reportes"] #analyticsModal .analytics-modal-header button[onclick*="close"] {
         display: none !important;
@@ -4743,5 +4740,146 @@ body .modal-overlay.force-visible {
 @media (min-width: 861px) {
     .header-cumple-btn {
         display: inline-flex;
+    }
+}
+
+/* =========================================================
+   VENTANA COMPLETA PARA FORMULARIOS (NUEVO / EDITAR CONTACTO)
+========================================================= */
+.form-overlay {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+    z-index: 2000000;
+}
+
+.form-composer {
+    background: #ffffff;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.form-composer-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px 18px;
+    background: linear-gradient(135deg, var(--brand-800) 0%, var(--brand-600) 60%, var(--brand-500) 100%);
+    color: #ffffff;
+}
+
+.form-header-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex: 0 0 auto;
+}
+
+.form-header-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.form-header-text h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+}
+
+.form-header-text p {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.form-close {
+    flex: 0 0 auto;
+    background: rgba(255, 255, 255, 0.16);
+    border: none;
+    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.form-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.form-composer-form {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-composer-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 16px 18px;
+    background: #F8FAFC;
+}
+
+.form-composer-footer {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 10px;
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px)) 18px;
+    background: #ffffff;
+    border-top: 1px solid var(--border-light);
+    box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.form-composer-footer .btn-modal-cancel,
+.form-composer-footer .btn-modal-save {
+    flex: 1 1 0;
+    padding: 13px;
+    font-size: 14px;
+}
+
+@media (min-width: 641px) {
+    .form-overlay {
+        padding: 24px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-composer {
+        height: auto;
+        max-width: 560px;
+        max-height: 92vh;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-elevated);
+        border: 1px solid rgba(225, 238, 253, 0.9);
+    }
+
+    .form-composer-body {
+        padding: 20px 22px;
     }
 }

@@ -423,113 +423,125 @@
         </div>
     </main>
 
-    <!-- MODAL NUEVO ASISTENTE -->
-    <div class="modal-overlay" id="newMemberModal" data-tab="agregar" onclick="if(event.target===this) closeNewMemberModal()">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3 class="modal-title" id="newModalTitle">+ Registrar Nuevo Asistente</h3>
-                <button type="button" onclick="closeNewMemberModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
-            </div>
-            <form id="newMemberForm" onsubmit="event.preventDefault(); submitNewMember();">
-                <div class="form-group">
-                    <label>Nombre(s) *</label>
-                    <input type="text" id="newNom" class="form-control" placeholder="Ej. Juan Carlos" required>
+    <!-- MODAL NUEVO ASISTENTE (VENTANA COMPLETA) -->
+    <div class="modal-overlay form-overlay" id="newMemberModal" data-tab="agregar" onclick="if(event.target===this) closeNewMemberModal()">
+        <div class="form-composer" onclick="event.stopPropagation()">
+            <header class="form-composer-header">
+                <div class="form-header-icon">➕</div>
+                <div class="form-header-text">
+                    <h3 id="newModalTitle">Registrar Nuevo Asistente</h3>
+                    <p>Completa los datos del nuevo contacto</p>
                 </div>
-                <div class="form-group">
-                    <label>Apellidos</label>
-                    <input type="text" id="newApe" class="form-control" placeholder="Ej. Gómez Pérez">
+                <button type="button" class="form-close" onclick="closeNewMemberModal()" aria-label="Cerrar">&times;</button>
+            </header>
+            <form id="newMemberForm" class="form-composer-form" onsubmit="event.preventDefault(); submitNewMember();">
+                <div class="form-composer-body">
+                    <div class="form-group">
+                        <label>Nombre(s) *</label>
+                        <input type="text" id="newNom" class="form-control" placeholder="Ej. Juan Carlos" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Apellidos</label>
+                        <input type="text" id="newApe" class="form-control" placeholder="Ej. Gómez Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label>Categoría / Estado Eclesial *</label>
+                        <select id="newCat" class="form-control" onchange="onCategorySelectChange()">
+                            <option value="Visita" selected>Visita (Nuevo / Primera vez)</option>
+                            <option value="Amigo">Amigo (Asistente regular)</option>
+                            <option value="Miembro activo">Miembro activo (Bautizado)</option>
+                            <option value="Hermano">Hermano</option>
+                            <option value="Niño">Niño</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Género</label>
+                        <select id="newGen" class="form-control">
+                            <option value="Hombre">Hombre</option>
+                            <option value="Mujer">Mujer</option>
+                            <option value="Niño">Niño</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono / WhatsApp (Opcional)</label>
+                        <input type="tel" id="newTel" class="form-control" placeholder="Ej. 612345678" inputmode="tel">
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:13px;font-weight:600;color:var(--text-main);">
+                            <input type="checkbox" id="newAutoCheckin" checked style="width:auto;">
+                            Marcar asistencia para el culto activo de inmediato
+                        </label>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Categoría / Estado Eclesial *</label>
-                    <select id="newCat" class="form-control" onchange="onCategorySelectChange()">
-                        <option value="Visita" selected>Visita (Nuevo / Primera vez)</option>
-                        <option value="Amigo">Amigo (Asistente regular)</option>
-                        <option value="Miembro activo">Miembro activo (Bautizado)</option>
-                        <option value="Hermano">Hermano</option>
-                        <option value="Niño">Niño</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Género</label>
-                    <select id="newGen" class="form-control">
-                        <option value="Hombre">Hombre</option>
-                        <option value="Mujer">Mujer</option>
-                        <option value="Niño">Niño</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Teléfono / WhatsApp (Opcional)</label>
-                    <input type="tel" id="newTel" class="form-control" placeholder="Ej. 612345678">
-                </div>
-                <div class="form-group" style="margin-top: 10px;">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:13px;font-weight:600;color:var(--text-main);">
-                        <input type="checkbox" id="newAutoCheckin" checked style="width:auto;">
-                        Marcar asistencia para el culto activo de inmediato
-                    </label>
-                </div>
-                <div class="modal-actions">
+                <footer class="form-composer-footer">
                     <button type="button" class="btn-modal-cancel" onclick="closeNewMemberModal()">Cancelar</button>
                     <button type="submit" class="btn-modal-save">Guardar Registro</button>
-                </div>
+                </footer>
             </form>
         </div>
     </div>
 
-    <!-- MODAL DE MODIFICACIONES Y GESTIÓN -->
-    <div class="modal-overlay" id="editMemberModal" onclick="if(event.target===this) closeEditModal()">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3 class="modal-title">✏️ Apartado de Modificaciones / Desagregar</h3>
-                <button type="button" onclick="closeEditModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
-            </div>
-            <form id="editMemberForm" onsubmit="event.preventDefault(); submitEditMember();">
-                <div class="form-group" id="editSearchGroup" style="background:#eff6ff;padding:10px;border-radius:var(--radius-sm);border:1px solid #bfdbfe;margin-bottom:14px;">
-                    <label style="color:var(--primary-blue-dark);margin-bottom:4px;display:block;">🔍 Buscar a quién deseas modificar o desagregar:</label>
-                    <input type="text" id="modalSearchMember" class="form-control" placeholder="Escribe el nombre de la persona..." oninput="onModalSearchInput(this.value)" autocomplete="off">
-                    <div id="modalSearchResults" style="max-height:140px;overflow-y:auto;margin-top:6px;display:none;background:#ffffff;border:1px solid var(--border-color);border-radius:var(--radius-sm);"></div>
+    <!-- MODAL DE MODIFICACIONES Y GESTIÓN (VENTANA COMPLETA) -->
+    <div class="modal-overlay form-overlay" id="editMemberModal" onclick="if(event.target===this) closeEditModal()">
+        <div class="form-composer" onclick="event.stopPropagation()">
+            <header class="form-composer-header">
+                <div class="form-header-icon">✏️</div>
+                <div class="form-header-text">
+                    <h3>Modificar / Desagregar contacto</h3>
+                    <p>Busca una persona y actualiza sus datos</p>
                 </div>
+                <button type="button" class="form-close" onclick="closeEditModal()" aria-label="Cerrar">&times;</button>
+            </header>
+            <form id="editMemberForm" class="form-composer-form" onsubmit="event.preventDefault(); submitEditMember();">
+                <div class="form-composer-body">
+                    <div class="form-group" id="editSearchGroup" style="background:#eff6ff;padding:10px;border-radius:var(--radius-sm);border:1px solid #bfdbfe;margin-bottom:14px;">
+                        <label style="color:var(--primary-blue-dark);margin-bottom:4px;display:block;">🔍 Buscar a quién deseas modificar o desagregar:</label>
+                        <input type="text" id="modalSearchMember" class="form-control" placeholder="Escribe el nombre de la persona..." oninput="onModalSearchInput(this.value)" autocomplete="off">
+                        <div id="modalSearchResults" style="max-height:180px;overflow-y:auto;margin-top:6px;display:none;background:#ffffff;border:1px solid var(--border-color);border-radius:var(--radius-sm);"></div>
+                    </div>
 
-                <div class="form-group">
-                    <label>Nombre(s) *</label>
-                    <input type="text" id="editNom" class="form-control" required>
+                    <div class="form-group">
+                        <label>Nombre(s) *</label>
+                        <input type="text" id="editNom" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Apellidos</label>
+                        <input type="text" id="editApe" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Categoría / Estado Eclesial *</label>
+                        <select id="editCat" class="form-control">
+                            <option value="Miembro activo">Miembro activo (Bautizado)</option>
+                            <option value="Hermano">Hermano</option>
+                            <option value="Amigo">Amigo (Asistente regular)</option>
+                            <option value="Visita">Visita (Nuevo / Ocasional)</option>
+                            <option value="Niño">Niño</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Género</label>
+                        <select id="editGen" class="form-control">
+                            <option value="Hombre">Hombre</option>
+                            <option value="Mujer">Mujer</option>
+                            <option value="Niño">Niño</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono / WhatsApp</label>
+                        <input type="tel" id="editTel" class="form-control" inputmode="tel">
+                    </div>
+                    <div class="form-group">
+                        <label>Condición en el Listado</label>
+                        <select id="editEstado" class="form-control">
+                            <option value="Activo">Activo (Visible en el buscador)</option>
+                            <option value="Inactivo">Inactivo / Desagregado (Archivado)</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Apellidos</label>
-                    <input type="text" id="editApe" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Categoría / Estado Eclesial *</label>
-                    <select id="editCat" class="form-control">
-                        <option value="Miembro activo">Miembro activo (Bautizado)</option>
-                        <option value="Hermano">Hermano</option>
-                        <option value="Amigo">Amigo (Asistente regular)</option>
-                        <option value="Visita">Visita (Nuevo / Ocasional)</option>
-                        <option value="Niño">Niño</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Género</label>
-                    <select id="editGen" class="form-control">
-                        <option value="Hombre">Hombre</option>
-                        <option value="Mujer">Mujer</option>
-                        <option value="Niño">Niño</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Teléfono / WhatsApp</label>
-                    <input type="tel" id="editTel" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Condición en el Listado</label>
-                    <select id="editEstado" class="form-control">
-                        <option value="Activo">Activo (Visible en el buscador)</option>
-                        <option value="Inactivo">Inactivo / Desagregado (Archivado)</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
+                <footer class="form-composer-footer">
                     <button type="button" class="btn-modal-cancel" onclick="closeEditModal()">Cancelar</button>
                     <button type="submit" class="btn-modal-save">Guardar Cambios</button>
-                </div>
+                </footer>
             </form>
         </div>
     </div>
@@ -3891,6 +3903,14 @@
         
         // Mobile behavior: Switch Tab
         closeMobileSearchMode();
+
+        // El formulario de nuevo contacto se abre como ventana completa
+        if (tabName === 'agregar') {
+            switchMobileTab('asistencia');
+            openNewMemberModal();
+            return;
+        }
+
         document.body.setAttribute('data-active-tab', tabName);
         
         // Update nav active classes
