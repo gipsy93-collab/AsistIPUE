@@ -4,6 +4,7 @@ __pycache__/
 .env
 *.json
 !data/initial_members.json
+!data/initial_cumpleanos.json
 !vercel.json
 *.xlsx
 .~lock.*

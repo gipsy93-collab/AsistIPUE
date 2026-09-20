@@ -75,7 +75,8 @@ os.makedirs(DATA_DIR, exist_ok=True)
 LOCAL_DB_FILE = os.path.join(DATA_DIR, 'local_db.json')
 INITIAL_MEMBERS_FILE = os.path.join(PROJECT_DIR, 'data', 'initial_members.json')
 LOCAL_CUMPLEANOS_FILE = os.path.join(DATA_DIR, 'cumpleanos.json')
-INITIAL_CUMPLEANOS_FILE = os.path.join(PROJECT_DIR, 'data', 'cumpleanos.json')
+INITIAL_CUMPLEANOS_FILE = os.path.join(PROJECT_DIR, 'data', 'initial_cumpleanos.json')
+FALLBACK_CUMPLEANOS_FILE = os.path.join(PROJECT_DIR, 'data', 'cumpleanos.json')
 
 SHEET_ID = os.environ.get('SHEET_ID', '').strip()
 SCORE_CUTOFF_DATE = os.environ.get('SCORE_CUTOFF_DATE', '2026-09-01').strip()
@@ -211,6 +212,36 @@ def get_or_create_amigos_ws(sh):
             print(f'Error creando hoja Amigos en Sheets: {e}')
             return None
 
+def get_or_create_cumpleanos_ws(sh):
+    if not sh:
+        return None
+    try:
+        return sh.worksheet('Cumpleanos')
+    except Exception:
+        try:
+            ws = sh.add_worksheet('Cumpleanos', 500, 12)
+            ws.append_row(['ID', 'Mes_Num', 'Mes', 'Dia', 'Nombre', 'Categoria', 'Genero', 'Telefono', 'ID_Miembro', 'Nombre_Miembro_Vinculado', 'Nota'])
+            return ws
+        except Exception as e:
+            print(f'Error creando hoja Cumpleanos en Sheets: {e}')
+            return None
+
+def save_cumpleanos(c_list):
+    """Guarda los registros de cumpleaños de forma segura y atómica."""
+    try:
+        tmp_file = LOCAL_CUMPLEANOS_FILE + '.tmp'
+        with open(tmp_file, 'w', encoding='utf-8') as f:
+            json.dump(c_list, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_file, LOCAL_CUMPLEANOS_FILE)
+    except Exception as e:
+        print(f'Error guardando LOCAL_CUMPLEANOS_FILE: {e}')
+    if os.path.exists(os.path.dirname(INITIAL_CUMPLEANOS_FILE)):
+        try:
+            with open(INITIAL_CUMPLEANOS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(c_list, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
 def restore_db_from_sheets(target_db):
     """Reconstruye atómicamente la base local desde Google Sheets usando batch get (alta velocidad < 1s)."""
     sh = get_sheet()
@@ -222,6 +253,7 @@ def restore_db_from_sheets(target_db):
         get_or_create_ujieres_ws(sh)
         get_or_create_visitas_ws(sh)
         get_or_create_amigos_ws(sh)
+        get_or_create_cumpleanos_ws(sh)
     except Exception as e:
         print(f'Asegurar hojas ws: {e}')
 
@@ -239,7 +271,8 @@ def restore_db_from_sheets(target_db):
             'Amigos!A1:I',
             'Asistencia!A1:J',
             'Cultos_Metricas!A1:D',
-            'Ujieres!A1:C'
+            'Ujieres!A1:C',
+            'Cumpleanos!A1:K'
         ])
         for vr in batch.get('valueRanges', []):
             r_name = vr.get('range', '').split('!')[0].replace("'", "")
@@ -378,6 +411,34 @@ def restore_db_from_sheets(target_db):
             nom = str(r.get('Nombre_Ujier', '')).strip()
             if nom and nom not in new_ujieres:
                 new_ujieres.append(nom)
+
+    # 7. Cumpleaños
+    c_rows = ranges.get('Cumpleanos', [])
+    if len(c_rows) > 1:
+        headers = [h.strip() for h in c_rows[0]]
+        new_cumple = []
+        for row in c_rows[1:]:
+            if not row:
+                continue
+            r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+            c_id = str(r.get('ID', '')).strip()
+            if not c_id:
+                continue
+            new_cumple.append({
+                'id': c_id,
+                'mes_num': to_int(r.get('Mes_Num', 1)),
+                'mes': str(r.get('Mes', '')).strip(),
+                'dia': to_int(r.get('Dia', 1)),
+                'nombre': str(r.get('Nombre', '')).strip(),
+                'categoria': str(r.get('Categoria', '')).strip(),
+                'genero': str(r.get('Genero', '')).strip(),
+                'telefono': str(r.get('Telefono', '')).strip(),
+                'member_id': str(r.get('ID_Miembro', '')).strip(),
+                'member_nombre_completo': str(r.get('Nombre_Miembro_Vinculado', '')).strip(),
+                'nota': str(r.get('Nota', '')).strip()
+            })
+        if new_cumple:
+            save_cumpleanos(new_cumple)
 
     # Actualizar target_db asegurando que no se borren datos existentes por fallos parciales
     updated = False
@@ -710,7 +771,7 @@ def get_current_date_info():
 # GESTIÓN Y MOTOR DE CUMPLEAÑOS (VISOR PREMIUM IPUE)
 # =========================================================
 def load_cumpleanos_raw():
-    """Carga los registros de cumpleaños desde JSON local / proyecto."""
+    """Carga los registros de cumpleaños desde JSON local, JSON inicial o Google Sheets."""
     c_list = []
     if os.path.exists(LOCAL_CUMPLEANOS_FILE):
         try:
@@ -724,23 +785,123 @@ def load_cumpleanos_raw():
                 c_list = json.load(f)
         except Exception as e:
             print(f'Error leyendo INITIAL_CUMPLEANOS_FILE: {e}')
+    if not c_list and os.path.exists(FALLBACK_CUMPLEANOS_FILE):
+        try:
+            with open(FALLBACK_CUMPLEANOS_FILE, 'r', encoding='utf-8') as f:
+                c_list = json.load(f)
+        except Exception as e:
+            print(f'Error leyendo FALLBACK_CUMPLEANOS_FILE: {e}')
+    # Si sigue vacío (p. ej. en Vercel o recién clonado), cargar directo desde Google Sheets
+    if not c_list:
+        sh = get_sheet()
+        if sh:
+            try:
+                ws = get_or_create_cumpleanos_ws(sh)
+                if ws:
+                    all_vals = ws.get_all_values()
+                    if len(all_vals) > 1:
+                        headers = [h.strip() for h in all_vals[0]]
+                        for row in all_vals[1:]:
+                            if not row:
+                                continue
+                            r = {headers[i]: row[i] if i < len(row) else '' for i in range(len(headers))}
+                            c_id = str(r.get('ID', '')).strip()
+                            if not c_id:
+                                continue
+                            c_list.append({
+                                'id': c_id,
+                                'mes_num': to_int(r.get('Mes_Num', 1)),
+                                'mes': str(r.get('Mes', '')).strip(),
+                                'dia': to_int(r.get('Dia', 1)),
+                                'nombre': str(r.get('Nombre', '')).strip(),
+                                'categoria': str(r.get('Categoria', '')).strip(),
+                                'genero': str(r.get('Genero', '')).strip(),
+                                'telefono': str(r.get('Telefono', '')).strip(),
+                                'member_id': str(r.get('ID_Miembro', '')).strip(),
+                                'member_nombre_completo': str(r.get('Nombre_Miembro_Vinculado', '')).strip(),
+                                'nota': str(r.get('Nota', '')).strip()
+                            })
+                        if c_list:
+                            save_cumpleanos(c_list)
+            except Exception as e:
+                print(f'Error cargando cumpleaños desde Google Sheets: {e}')
     return c_list if isinstance(c_list, list) else []
 
-def save_cumpleanos(c_list):
-    """Guarda los registros de cumpleaños de forma segura y atómica."""
+def sync_sheets_write_cumpleanos(item):
+    """Inserta una fila de cumpleaños en la hoja Cumpleanos de Google Sheets."""
+    sh = get_sheet()
+    if not sh:
+        return
     try:
-        tmp_file = LOCAL_CUMPLEANOS_FILE + '.tmp'
-        with open(tmp_file, 'w', encoding='utf-8') as f:
-            json.dump(c_list, f, ensure_ascii=False, indent=2)
-        os.replace(tmp_file, LOCAL_CUMPLEANOS_FILE)
+        ws = get_or_create_cumpleanos_ws(sh)
+        if ws:
+            ws.append_row([
+                str(item.get('id', '')),
+                item.get('mes_num', ''),
+                str(item.get('mes', '')),
+                item.get('dia', ''),
+                str(item.get('nombre', '')),
+                str(item.get('categoria', '')),
+                str(item.get('genero', '')),
+                str(item.get('telefono', '')),
+                str(item.get('member_id', '')),
+                str(item.get('member_nombre_completo', '')),
+                str(item.get('nota', ''))
+            ])
     except Exception as e:
-        print(f'Error guardando LOCAL_CUMPLEANOS_FILE: {e}')
-    if os.path.exists(os.path.dirname(INITIAL_CUMPLEANOS_FILE)):
-        try:
-            with open(INITIAL_CUMPLEANOS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(c_list, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
+        print(f'Error sync nuevo cumpleaños a Sheets: {e}')
+
+def sync_sheets_update_cumpleanos(item):
+    """Actualiza la fila de un cumpleaños en Sheets por matching de ID."""
+    sh = get_sheet()
+    if not sh:
+        return
+    c_id = str(item.get('id', '')).strip()
+    if not c_id:
+        return
+    try:
+        ws = get_or_create_cumpleanos_ws(sh)
+        if not ws:
+            return
+        all_v = ws.get_all_values()
+        for i in range(1, len(all_v)):
+            if all_v[i] and all_v[i][0] == c_id:
+                ws.update(range_name=f'A{i+1}:K{i+1}', values=[[
+                    str(item.get('id', '')),
+                    item.get('mes_num', ''),
+                    str(item.get('mes', '')),
+                    item.get('dia', ''),
+                    str(item.get('nombre', '')),
+                    str(item.get('categoria', '')),
+                    str(item.get('genero', '')),
+                    str(item.get('telefono', '')),
+                    str(item.get('member_id', '')),
+                    str(item.get('member_nombre_completo', '')),
+                    str(item.get('nota', ''))
+                ]])
+                break
+    except Exception as e:
+        print(f'Error sync update cumpleaños a Sheets: {e}')
+
+def sync_sheets_delete_cumpleanos(c_id):
+    """Elimina la fila de un cumpleaños en Sheets por matching de ID."""
+    sh = get_sheet()
+    if not sh:
+        return
+    c_id = str(c_id).strip()
+    if not c_id:
+        return
+    try:
+        ws = get_or_create_cumpleanos_ws(sh)
+        if not ws:
+            return
+        all_v = ws.get_all_values()
+        for i in range(len(all_v) - 1, 0, -1):
+            if all_v[i] and all_v[i][0] == c_id:
+                ws.delete_rows(i + 1)
+                break
+    except Exception as e:
+        print(f'Error sync delete cumpleaños a Sheets: {e}')
 
 def get_birthday_alerts(ref_date_str=None):
     """Calcula cumpleañeros de hoy, próximos (14 días) y recientes (3 días) según la fecha del culto."""
@@ -1898,6 +2059,7 @@ def api_add_cumpleanos():
     
     all_b.append(new_entry)
     save_cumpleanos(all_b)
+    sync_sheets_write_cumpleanos(new_entry)
     return jsonify({'status': 'ok', 'record': new_entry})
 
 @app.route('/api/cumpleanos/update', methods=['POST'])
@@ -1930,6 +2092,7 @@ def api_update_cumpleanos():
         target['categoria'] = data['categoria'].strip()
         
     save_cumpleanos(all_b)
+    sync_sheets_update_cumpleanos(target)
     return jsonify({'status': 'ok', 'record': target})
 
 @app.route('/api/cumpleanos/delete', methods=['POST'])
@@ -1943,6 +2106,7 @@ def api_delete_cumpleanos():
     all_b = load_cumpleanos_raw()
     all_b = [b for b in all_b if b.get('id') != c_id]
     save_cumpleanos(all_b)
+    sync_sheets_delete_cumpleanos(c_id)
     return jsonify({'status': 'ok', 'id': c_id})
 
 @app.route('/api/cumpleanos/export-csv')

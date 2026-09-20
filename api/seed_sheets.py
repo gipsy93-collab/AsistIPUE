@@ -79,6 +79,31 @@ def init_church_sheet(sheet_id):
             ws_u = sh.add_worksheet('Ujieres', 500, 5)
             ws_u.append_row(['Nombre_Ujier', 'Fecha_Primer_Registro', 'Total_Servicios'])
             
+        # 5. Pestaña Cumpleanos
+        try:
+            ws_c = sh.worksheet('Cumpleanos')
+        except Exception:
+            ws_c = sh.add_worksheet('Cumpleanos', 500, 12)
+            c_headers = ['ID', 'Mes_Num', 'Mes', 'Dia', 'Nombre', 'Categoria', 'Genero', 'Telefono', 'ID_Miembro', 'Nombre_Miembro_Vinculado', 'Nota']
+            ws_c.append_row(c_headers)
+            c_json = os.path.join(os.path.dirname(__file__), '..', 'data', 'initial_cumpleanos.json')
+            if not os.path.exists(c_json):
+                c_json = os.path.join(os.path.dirname(__file__), '..', 'data', 'cumpleanos.json')
+            if os.path.exists(c_json):
+                with open(c_json, 'r', encoding='utf-8') as f:
+                    c_list = json.load(f)
+                c_rows = []
+                for c in c_list:
+                    c_rows.append([
+                        c.get('id', ''), c.get('mes_num', ''), c.get('mes', ''), c.get('dia', ''),
+                        c.get('nombre', ''), c.get('categoria', ''), c.get('genero', ''),
+                        c.get('telefono', ''), c.get('member_id', ''), c.get('member_nombre_completo', ''),
+                        c.get('nota', '')
+                    ])
+                if c_rows:
+                    ws_c.append_rows(c_rows)
+                print(f'Se insertaron {len(c_rows)} cumpleaños iniciales en la hoja Cumpleanos.')
+
         print('Estructura de pestañas verificada y lista en Google Sheets.')
         return True
     except Exception as e:
