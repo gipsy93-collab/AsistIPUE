@@ -168,6 +168,60 @@
             align-items: center;
             gap: 6px;
         }
+
+        .period-tabs {
+            flex-wrap: wrap;
+        }
+
+        /* Header responsivo en móvil: evita que YouTube, "Volver" y el logo
+           se salgan del marco (el header usa overflow:hidden). */
+        @media (max-width: 720px) {
+            .header {
+                flex-wrap: wrap;
+                padding: 8px 12px;
+                gap: 8px;
+            }
+            .header-left {
+                flex: 1 1 100%;
+            }
+            .header-title {
+                font-size: 16px;
+            }
+            .header-right {
+                flex: 1 1 100%;
+                margin-left: 0;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .header-right .btn-yt-stream span:last-child {
+                display: none;
+            }
+            .header-right .logo-container {
+                width: 44px;
+                height: 44px;
+            }
+            .report-layout {
+                margin: 14px auto;
+                padding: 0 12px;
+                gap: 16px;
+            }
+            .period-bar {
+                padding: 12px;
+            }
+            .period-tabs {
+                width: 100%;
+            }
+            .tab-btn {
+                flex: 1 1 auto;
+                text-align: center;
+                padding: 9px 12px;
+            }
+            .period-bar .btn-csv {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -209,6 +263,7 @@
         <!-- BARRA DE FILTROS TEMPORALES Y ACCIONES -->
         <div class="period-bar">
             <div class="period-tabs">
+                <button class="tab-btn" onclick="loadPeriod('dia', this)">Hoy</button>
                 <button class="tab-btn" onclick="loadPeriod('semana', this)">Esta Semana</button>
                 <button class="tab-btn" onclick="loadPeriod('mes', this)">Este Mes</button>
                 <button class="tab-btn active" onclick="loadPeriod('ano', this)">Este Año</button>

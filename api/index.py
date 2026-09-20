@@ -23,6 +23,21 @@ def to_int(value, default=0):
     except (ValueError, TypeError):
         return default
 
+def normalize_wa_phone(raw):
+    """Normaliza un teléfono al formato internacional de WhatsApp (solo dígitos).
+
+    Los números guardados suelen ser locales de 9 dígitos (España), así que se
+    les antepone el código de país 34. Si ya traen prefijo, se respeta.
+    """
+    digits = re.sub(r'\D', '', str(raw or ''))
+    if not digits:
+        return ''
+    if digits.startswith('00'):
+        digits = digits[2:]
+    if len(digits) == 9 and not digits.startswith('34'):
+        digits = '34' + digits
+    return digits
+
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates')
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static')
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
@@ -59,6 +74,8 @@ else:
 os.makedirs(DATA_DIR, exist_ok=True)
 LOCAL_DB_FILE = os.path.join(DATA_DIR, 'local_db.json')
 INITIAL_MEMBERS_FILE = os.path.join(PROJECT_DIR, 'data', 'initial_members.json')
+LOCAL_CUMPLEANOS_FILE = os.path.join(DATA_DIR, 'cumpleanos.json')
+INITIAL_CUMPLEANOS_FILE = os.path.join(PROJECT_DIR, 'data', 'cumpleanos.json')
 
 SHEET_ID = os.environ.get('SHEET_ID', '').strip()
 SCORE_CUTOFF_DATE = os.environ.get('SCORE_CUTOFF_DATE', '2026-09-01').strip()
@@ -690,13 +707,144 @@ def get_current_date_info():
     }
 
 # =========================================================
+# GESTIÓN Y MOTOR DE CUMPLEAÑOS (VISOR PREMIUM IPUE)
+# =========================================================
+def load_cumpleanos_raw():
+    """Carga los registros de cumpleaños desde JSON local / proyecto."""
+    c_list = []
+    if os.path.exists(LOCAL_CUMPLEANOS_FILE):
+        try:
+            with open(LOCAL_CUMPLEANOS_FILE, 'r', encoding='utf-8') as f:
+                c_list = json.load(f)
+        except Exception as e:
+            print(f'Error leyendo LOCAL_CUMPLEANOS_FILE: {e}')
+    if not c_list and os.path.exists(INITIAL_CUMPLEANOS_FILE):
+        try:
+            with open(INITIAL_CUMPLEANOS_FILE, 'r', encoding='utf-8') as f:
+                c_list = json.load(f)
+        except Exception as e:
+            print(f'Error leyendo INITIAL_CUMPLEANOS_FILE: {e}')
+    return c_list if isinstance(c_list, list) else []
+
+def save_cumpleanos(c_list):
+    """Guarda los registros de cumpleaños de forma segura y atómica."""
+    try:
+        tmp_file = LOCAL_CUMPLEANOS_FILE + '.tmp'
+        with open(tmp_file, 'w', encoding='utf-8') as f:
+            json.dump(c_list, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_file, LOCAL_CUMPLEANOS_FILE)
+    except Exception as e:
+        print(f'Error guardando LOCAL_CUMPLEANOS_FILE: {e}')
+    if os.path.exists(os.path.dirname(INITIAL_CUMPLEANOS_FILE)):
+        try:
+            with open(INITIAL_CUMPLEANOS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(c_list, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+def get_birthday_alerts(ref_date_str=None):
+    """Calcula cumpleañeros de hoy, próximos (14 días) y recientes (3 días) según la fecha del culto."""
+    if not ref_date_str:
+        ref_dt = now_local().date()
+    else:
+        try:
+            ref_dt = datetime.strptime(str(ref_date_str).strip(), '%Y-%m-%d').date()
+        except Exception:
+            ref_dt = now_local().date()
+            
+    c_list = load_cumpleanos_raw()
+    
+    hoy = []
+    proximos = []
+    recientes = []
+    mes_actual = []
+    
+    for item in c_list:
+        try:
+            m_num = int(item.get('mes_num', 1))
+            d_num = int(item.get('dia', 1))
+        except (ValueError, TypeError):
+            continue
+            
+        b_copy = dict(item)
+        
+        # En el mes de referencia
+        if m_num == ref_dt.month:
+            mes_actual.append(b_copy)
+            
+        # Ocurrencia de cumpleaños este año
+        try:
+            b_dt_this_year = date(ref_dt.year, m_num, d_num)
+        except ValueError:
+            b_dt_this_year = date(ref_dt.year, m_num, 28)
+            
+        delta = (b_dt_this_year - ref_dt).days
+        
+        if delta == 0:
+            b_copy['dias_faltan'] = 0
+            b_copy['etiqueta'] = '¡Hoy!'
+            b_copy['fecha_evento'] = b_dt_this_year.strftime('%Y-%m-%d')
+            b_copy['dia_semana'] = DIAS_ES[b_dt_this_year.weekday()]
+            hoy.append(b_copy)
+        elif 0 < delta <= 14:
+            b_copy['dias_faltan'] = delta
+            b_copy['etiqueta'] = 'Mañana' if delta == 1 else f'En {delta} días'
+            b_copy['fecha_evento'] = b_dt_this_year.strftime('%Y-%m-%d')
+            b_copy['dia_semana'] = DIAS_ES[b_dt_this_year.weekday()]
+            proximos.append(b_copy)
+        elif delta < 0:
+            if abs(delta) <= 3:
+                b_copy['dias_pasados'] = abs(delta)
+                b_copy['etiqueta'] = 'Ayer' if abs(delta) == 1 else f'Hace {abs(delta)} días'
+                b_copy['fecha_evento'] = b_dt_this_year.strftime('%Y-%m-%d')
+                b_copy['dia_semana'] = DIAS_ES[b_dt_this_year.weekday()]
+                recientes.append(b_copy)
+            # Evaluar ocurrencia para el próximo año (caso fin de año)
+            try:
+                b_dt_next_year = date(ref_dt.year + 1, m_num, d_num)
+            except ValueError:
+                b_dt_next_year = date(ref_dt.year + 1, m_num, 28)
+            delta_next = (b_dt_next_year - ref_dt).days
+            if 0 < delta_next <= 14:
+                b_copy_next = dict(item)
+                b_copy_next['dias_faltan'] = delta_next
+                b_copy_next['etiqueta'] = 'Mañana' if delta_next == 1 else f'En {delta_next} días'
+                b_copy_next['fecha_evento'] = b_dt_next_year.strftime('%Y-%m-%d')
+                b_copy_next['dia_semana'] = DIAS_ES[b_dt_next_year.weekday()]
+                proximos.append(b_copy_next)
+                
+    hoy.sort(key=lambda x: x.get('nombre', ''))
+    proximos.sort(key=lambda x: (x.get('dias_faltan', 999), x.get('dia', 1)))
+    recientes.sort(key=lambda x: x.get('dias_pasados', 0))
+    mes_actual.sort(key=lambda x: x.get('dia', 1))
+    
+    return {
+        'fecha_referencia': ref_dt.strftime('%Y-%m-%d'),
+        'mes_nombre': MESES_ES[ref_dt.month - 1],
+        'mes_num': ref_dt.month,
+        'ano': ref_dt.year,
+        'hoy': hoy,
+        'proximos': proximos,
+        'recientes': recientes,
+        'mes_actual': mes_actual,
+        'total_registrados': len(c_list),
+        'total_mes': len(mes_actual)
+    }
+
+
+# =========================================================
 # RUTAS DE PÁGINAS PRINCIPALES
 # =========================================================
 @app.route('/')
 @app.route('/api/index.py')
 @app.route('/api/index')
 def index_page():
-    return render_template('index.html')
+    today_str = now_local().strftime('%Y-%m-%d')
+    birthday_alerts = get_birthday_alerts(today_str)
+    all_birthdays = load_cumpleanos_raw()
+    return render_template('index.html',
+                           birthday_alerts=birthday_alerts,
+                           all_birthdays=all_birthdays)
 
 @app.route('/report')
 def report_page():
@@ -930,8 +1078,65 @@ def api_members_search():
         m_copy['sheet_name'] = 'Visitas' if cat == 'Visita' else ('Amigos' if cat == 'Amigo' else 'Miembros')
         
         results.append(m_copy)
+
+    # Enriquecer con información de cumpleaños
+    try:
+        b_alerts = get_birthday_alerts(fecha)
+        hoy_map = {b.get('member_id'): b for b in b_alerts.get('hoy', []) if b.get('member_id')}
+        prox_map = {b.get('member_id'): b for b in b_alerts.get('proximos', []) if b.get('member_id')}
+        rec_map = {b.get('member_id'): b for b in b_alerts.get('recientes', []) if b.get('member_id')}
+
+        # También crear mapa por nombre normalizado por si el member_id aún no está enlazado
+        hoy_name_map = {normalize_str(b.get('nombre', '')): b for b in b_alerts.get('hoy', [])}
+        prox_name_map = {normalize_str(b.get('nombre', '')): b for b in b_alerts.get('proximos', [])}
+        rec_name_map = {normalize_str(b.get('nombre', '')): b for b in b_alerts.get('recientes', [])}
+
+        for r in results:
+            mid = r.get('id', '')
+            full_n = normalize_str(f"{r.get('nombre', '')} {r.get('apellidos', '')}")
+            first_n = normalize_str(r.get('nombre', ''))
+
+            if mid in hoy_map or full_n in hoy_name_map or first_n in hoy_name_map:
+                info = hoy_map.get(mid) or hoy_name_map.get(full_n) or hoy_name_map.get(first_n)
+                r['cumpleanos_info'] = {
+                    'tipo': 'hoy',
+                    'texto': '🎂 ¡Cumpleaños Hoy! 🎉',
+                    'etiqueta': '¡Hoy!',
+                    'dias_faltan': 0,
+                    'dia': info.get('dia'),
+                    'mes': info.get('mes'),
+                    'nota': info.get('nota', '')
+                }
+            elif mid in prox_map or full_n in prox_name_map or first_n in prox_name_map:
+                info = prox_map.get(mid) or prox_name_map.get(full_n) or prox_name_map.get(first_n)
+                r['cumpleanos_info'] = {
+                    'tipo': 'proximo',
+                    'texto': f"🎂 Cumpleaños {info.get('etiqueta', '')} ({info.get('dia')} de {info.get('mes')})",
+                    'etiqueta': info.get('etiqueta', ''),
+                    'dias_faltan': info.get('dias_faltan', 1),
+                    'dia': info.get('dia'),
+                    'mes': info.get('mes'),
+                    'dia_semana': info.get('dia_semana', ''),
+                    'nota': info.get('nota', '')
+                }
+            elif mid in rec_map or full_n in rec_name_map or first_n in rec_name_map:
+                info = rec_map.get(mid) or rec_name_map.get(full_n) or rec_name_map.get(first_n)
+                r['cumpleanos_info'] = {
+                    'tipo': 'reciente',
+                    'texto': f"🎈 Cumplió {info.get('etiqueta', '')} ({info.get('dia')} de {info.get('mes')})",
+                    'etiqueta': info.get('etiqueta', ''),
+                    'dias_pasados': info.get('dias_pasados', 1),
+                    'dia': info.get('dia'),
+                    'mes': info.get('mes'),
+                    'nota': info.get('nota', '')
+                }
+            else:
+                r['cumpleanos_info'] = None
+    except Exception as e:
+        print(f'Error enriqueciendo cumpleanos en search: {e}')
         
     return jsonify(results)
+
 
 @app.route('/api/members/update', methods=['POST'])
 def api_members_update():
@@ -1450,7 +1655,7 @@ def api_reports_friends():
         fechas = [a.get('fecha') for a in asistencias_p]
         
         tel = p.get('telefono', '').strip()
-        wa_tel = ''.join(c for c in tel if c.isdigit())
+        wa_tel = normalize_wa_phone(tel)
         
         result.append({
             'id': m_id,
@@ -1604,8 +1809,184 @@ def api_reports_export_culto_csv():
         headers={'Content-Disposition': f'attachment; filename="{safe_name}"'}
     )
 
+# =========================================================
+# RUTAS API DEL VISOR PREMIUM DE CUMPLEAÑOS
+# =========================================================
+@app.route('/api/cumpleanos')
+def api_get_cumpleanos():
+    """Listado general de cumpleaños con filtrado por mes y búsqueda inteligente."""
+    mes = request.args.get('mes', '').strip()
+    q = request.args.get('q', '').strip().lower()
+    
+    all_b = load_cumpleanos_raw()
+    filtered = []
+    
+    for item in all_b:
+        # Filtrado por mes si se especificó
+        if mes:
+            if mes.isdigit():
+                if int(item.get('mes_num', 0)) != int(mes):
+                    continue
+            else:
+                if normalize_str(item.get('mes', '')) != normalize_str(mes):
+                    continue
+                    
+        # Filtrado por término de búsqueda
+        if q:
+            name_norm = normalize_str(item.get('nombre', ''))
+            nota_norm = normalize_str(item.get('nota', ''))
+            q_norm = normalize_str(q)
+            if q_norm not in name_norm and q_norm not in nota_norm:
+                continue
+                
+        filtered.append(item)
+        
+    filtered.sort(key=lambda x: (int(x.get('mes_num', 1)), int(x.get('dia', 1)), x.get('nombre', '')))
+    return jsonify({
+        'status': 'ok',
+        'total': len(filtered),
+        'cumpleanos': filtered
+    })
+
+@app.route('/api/cumpleanos/alertas')
+def api_get_cumpleanos_alertas():
+    """Devuelve los cumpleaños para la sesión de culto actual (hoy, próximos 14 días y recientes)."""
+    fecha = request.args.get('fecha', now_local().strftime('%Y-%m-%d')).strip()
+    alertas = get_birthday_alerts(fecha)
+    return jsonify({
+        'status': 'ok',
+        'alertas': alertas
+    })
+
+@app.route('/api/cumpleanos/add', methods=['POST'])
+def api_add_cumpleanos():
+    """Agrega un nuevo registro de cumpleaños."""
+    data = request.json or {}
+    nombre = data.get('nombre', '').strip()
+    dia = to_int(data.get('dia', 0))
+    mes_num = to_int(data.get('mes_num', 0))
+    nota = data.get('nota', '').strip()
+    member_id = data.get('member_id', '').strip()
+    telefono = data.get('telefono', '').strip()
+    
+    if not nombre or dia < 1 or dia > 31 or mes_num < 1 or mes_num > 12:
+        return jsonify({'error': 'Nombre, día (1-31) y mes (1-12) son obligatorios'}), 400
+        
+    mes_nombre = MESES_ES[mes_num - 1]
+    all_b = load_cumpleanos_raw()
+    
+    # Generar nuevo ID
+    existing_nums = []
+    for b in all_b:
+        m = re.search(r'\d+', str(b.get('id', '')))
+        if m:
+            existing_nums.append(int(m.group(0)))
+    next_id_num = (max(existing_nums) + 1) if existing_nums else (len(all_b) + 1)
+    new_id = f"CUMP_{next_id_num:03d}"
+    
+    new_entry = {
+        'id': new_id,
+        'mes_num': mes_num,
+        'mes': mes_nombre,
+        'dia': dia,
+        'nombre': nombre,
+        'nota': nota,
+        'member_id': member_id,
+        'telefono': telefono,
+        'categoria': data.get('categoria', 'Hermano')
+    }
+    
+    all_b.append(new_entry)
+    save_cumpleanos(all_b)
+    return jsonify({'status': 'ok', 'record': new_entry})
+
+@app.route('/api/cumpleanos/update', methods=['POST'])
+def api_update_cumpleanos():
+    """Actualiza los datos de un registro de cumpleaños existente."""
+    data = request.json or {}
+    c_id = data.get('id', '').strip()
+    if not c_id:
+        return jsonify({'error': 'ID de cumpleaños obligatorio'}), 400
+        
+    all_b = load_cumpleanos_raw()
+    target = next((b for b in all_b if b.get('id') == c_id), None)
+    if not target:
+        return jsonify({'error': f'Cumpleaños {c_id} no encontrado'}), 404
+        
+    if 'nombre' in data and data['nombre'].strip():
+        target['nombre'] = data['nombre'].strip()
+    if 'dia' in data and to_int(data['dia']) >= 1:
+        target['dia'] = to_int(data['dia'])
+    if 'mes_num' in data and 1 <= to_int(data['mes_num']) <= 12:
+        target['mes_num'] = to_int(data['mes_num'])
+        target['mes'] = MESES_ES[target['mes_num'] - 1]
+    if 'nota' in data:
+        target['nota'] = data['nota'].strip()
+    if 'member_id' in data:
+        target['member_id'] = data['member_id'].strip()
+    if 'telefono' in data:
+        target['telefono'] = data['telefono'].strip()
+    if 'categoria' in data:
+        target['categoria'] = data['categoria'].strip()
+        
+    save_cumpleanos(all_b)
+    return jsonify({'status': 'ok', 'record': target})
+
+@app.route('/api/cumpleanos/delete', methods=['POST'])
+def api_delete_cumpleanos():
+    """Elimina un registro de cumpleaños."""
+    data = request.json or {}
+    c_id = data.get('id', '').strip()
+    if not c_id:
+        return jsonify({'error': 'ID de cumpleaños obligatorio'}), 400
+        
+    all_b = load_cumpleanos_raw()
+    all_b = [b for b in all_b if b.get('id') != c_id]
+    save_cumpleanos(all_b)
+    return jsonify({'status': 'ok', 'id': c_id})
+
+@app.route('/api/cumpleanos/export-csv')
+def api_export_cumpleanos_csv():
+    """Exporta el calendario completo de cumpleaños en formato CSV para secretaría."""
+    mes = request.args.get('mes', '').strip()
+    all_b = load_cumpleanos_raw()
+    if mes:
+        if mes.isdigit():
+            all_b = [b for b in all_b if int(b.get('mes_num', 0)) == int(mes)]
+        else:
+            all_b = [b for b in all_b if normalize_str(b.get('mes', '')) == normalize_str(mes)]
+            
+    all_b.sort(key=lambda x: (int(x.get('mes_num', 1)), int(x.get('dia', 1)), x.get('nombre', '')))
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['CALENDARIO OFICIAL DE CUMPLEAÑOS - IPUE GRANADA'])
+    writer.writerow(['Generado', now_local().strftime('%Y-%m-%d %H:%M:%S')])
+    writer.writerow(['Total Registros', len(all_b)])
+    writer.writerow([])
+    writer.writerow(['Mes_Num', 'Mes', 'Dia', 'Nombre', 'Nota / Parentesco', 'ID_Miembro', 'Telefono'])
+    
+    for b in all_b:
+        writer.writerow([
+            b.get('mes_num', ''),
+            b.get('mes', ''),
+            b.get('dia', ''),
+            b.get('nombre', ''),
+            b.get('nota', ''),
+            b.get('member_id', ''),
+            b.get('telefono', '')
+        ])
+        
+    filename = f"Cumpleanos_IPUE_Granada_{now_local().strftime('%Y%m%d')}.csv"
+    return Response(
+        '\ufeff' + output.getvalue(),
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+
 @app.route('/static/<path:filename>')
 def serve_static(filename):
+
     # send_from_directory previene path traversal fuera del directorio estático
     return send_from_directory(STATIC_DIR, filename)
 
@@ -1623,7 +2004,8 @@ def serve_logo():
     return "Logo not found", 404
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5050))
     print(f'Servidor IPUE ASISIPUE iniciado en http://localhost:{port}')
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=True, use_reloader=False, host='0.0.0.0', port=port)
+
 

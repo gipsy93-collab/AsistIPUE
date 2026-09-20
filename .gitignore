@@ -4,8 +4,23 @@ __pycache__/
 .env
 *.json
 !data/initial_members.json
-!data/local_db.json
 !vercel.json
 *.xlsx
 .~lock.*
 Captura*.jpeg
+
+# Base de datos local: NO se sube (datos personales). Se regenera desde Google Sheets.
+# El archivo se conserva en el disco; solo se excluye del control de versiones.
+data/local_db.json
+data/cumpleanos.json
+
+# opencode / entornos locales (NO subir node_modules)
+.opencode/
+.venv/
+venv/
+node_modules/
+
+# notas y archivos temporales de desarrollo
+served.txt
+scratch_nav.txt
+test.html

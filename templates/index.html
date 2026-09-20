@@ -2,59 +2,60 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>Control de Asistencia - IPUE Granada</title>
-    <link rel="stylesheet" href="/static/app.css">
+    <link rel="stylesheet" href="/static/app.css?v=search_focus_4">
     <style>
         {% include 'app.css' %}
     </style>
+    <script>
+        window.__INITIAL_BIRTHDAY_ALERTS__ = {{ birthday_alerts | tojson if birthday_alerts else 'null' }};
+        window.__INITIAL_ALL_BIRTHDAYS__ = {{ all_birthdays | tojson if all_birthdays else '[]' }};
+    </script>
 </head>
-<body>
+<body data-active-tab="asistencia">
 
     <!-- HEADER INSTITUCIONAL -->
     <!-- HEADER INSTITUCIONAL -->
     <header class="header">
-        <div class="header-brand-group">
-            <div class="logo-wrapper">
-                <div class="logo-container logo-option-1" id="churchLogoContainer" title="IPUE Granada - Haz clic para interactuar" onclick="triggerLogoEffect()">
-                    <div class="logo-shimmer"></div>
-                    <img src="/static/logo_ipue.jpeg" onerror="this.onerror=null;this.src='/api/logo';" alt="Logo IPUE Granada" class="church-logo">
-                    <span class="logo-subtext">Granada</span>
-                </div>
+        <div class="logo-wrapper">
+            <div class="logo-container logo-option-1" id="churchLogoContainer" title="IPUE Granada - Haz clic para interactuar" onclick="triggerLogoEffect()">
+                <div class="logo-shimmer"></div>
+                <img src="/static/logo_ipue.jpeg" onerror="this.onerror=null;this.src='/api/logo';" alt="Logo IPUE Granada" class="church-logo">
             </div>
-            <div class="header-left">
+        </div>
+        <div class="header-center-wrap">
+            <div class="header-main-info">
                 <div class="header-title-row">
                     <span class="header-title">IPUE GRANADA</span>
-                    <span class="header-badge">Control de Asistencia</span>
                 </div>
                 <div class="header-date" id="currentDateDisplay">
                     📅 Cargando fecha...
                 </div>
             </div>
-        </div>
-        <div class="header-right">
-            <a href="https://www.youtube.com/@ipue_granada/streams" target="_blank" rel="noopener noreferrer" class="btn-yt-stream" title="Abrir canal de transmisiones de IPUE Granada en YouTube">
-                <svg class="yt-svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-                <span class="yt-pulse"></span>
-                <span class="yt-btn-text">🔴 YouTube En Vivo</span>
-            </a>
-            <div class="nav-links">
+            <div class="header-actions-group">
+                <a href="https://www.youtube.com/@ipue_granada/streams" target="_blank" rel="noopener noreferrer" class="btn-yt-stream" title="Abrir canal de transmisiones de IPUE Granada en YouTube">
+                    <svg class="yt-svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                    <span class="yt-pulse"></span>
+                    <span class="btn-action-text">En Vivo</span>
+                </a>
                 <button type="button" class="nav-btn btn-sync-sheets" onclick="triggerSheetsSync()" title="Sincronizar datos con Google Sheets">
-                    <span>🔄</span><span class="btn-label-desktop"> Sincronizar</span>
+                    <span>🔄</span><span class="btn-action-text">Sincronizar</span>
                 </button>
-                <button type="button" class="nav-btn" onclick="openGlobalManageModal()" title="Modificar o Desagregar asistente">
-                    <span>✏️</span><span class="btn-label-desktop"> Modificar</span>
+                <button type="button" class="nav-btn btn-cumpleanos header-cumple-btn" onclick="openCumpleanosModal('culto')" title="Abrir Visor de Cumpleaños">
+                    <span>🎂</span><span class="btn-action-text">Cumpleaños</span>
+                    <span class="cumple-nav-badge" id="headerCumpleBadge" style="display:none;">0</span>
                 </button>
-                <button type="button" class="nav-btn" onclick="openAnalyticsModal()" title="Analítica e Histórico">
-                    <span>📊</span><span class="btn-label-desktop"> Analítica</span>
+                <button type="button" class="nav-btn btn-edit-data" onclick="openGlobalManageModal()" title="Modificar o Desagregar asistente">
+                    <span>✏️</span><span class="btn-action-text">Editar</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- BARRA DE CONFIGURACIÓN DEL CULTO ACTIVO -->
+    <!-- BARRA DE CONFIGURACIÓN DEL CULTO ACTIVO (HERO DASHBOARD STITCH) -->
     <section class="control-bar">
         <!-- TIRA RESUMEN COMPACTA PARA MÓVILES -->
         <div class="mobile-service-strip" onclick="toggleMobileServiceGroup()">
@@ -66,119 +67,277 @@
             </button>
         </div>
 
-        <div class="service-selector-group" id="serviceSelectorGroup">
-            <!-- FECHA -->
-            <div class="input-pill">
-                <label>Fecha:</label>
-                <input type="date" id="serviceDate" onchange="onServiceContextChange()">
+        <div class="control-bar-top-row" data-tab="asistencia">
+            <!-- Métrica Principal Destacada: Aforo y Capacidad del Templo -->
+            <div class="capacity-hero-box">
+                <div class="capacity-ring-container">
+                    <svg class="capacity-ring-svg" viewBox="0 0 36 36">
+                        <path class="capacity-ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                        <path class="capacity-ring-fill" id="capacityRingProgress" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke-dasharray="0, 100"></path>
+                    </svg>
+                    <div class="capacity-ring-text">
+                        <span class="capacity-ring-label">AFORO</span>
+                        <span class="capacity-ring-value" id="valTotalPct">0%</span>
+                    </div>
+                </div>
+                <div class="capacity-info-block">
+                    <div class="capacity-title-row">
+                        <span class="capacity-label">Total Asistentes Presentes</span>
+                        <span class="capacity-status-dot"></span>
+                    </div>
+                    <div class="capacity-numbers">
+                        <span class="capacity-total-big" id="valTotal">0</span>
+                        <span class="capacity-max-label">/ 120 cupos del templo</span>
+                    </div>
+                    <div class="capacity-desc-sub" id="capacityStatusText">
+                        Capacidad actual calculada en tiempo real.
+                    </div>
+                </div>
             </div>
 
-            <!-- CULTO -->
-            <div class="input-pill">
-                <label>Culto:</label>
-                <select id="serviceCulto" onchange="onServiceContextChange()">
-                    <option value="Escuela Dominical">Escuela Dominical</option>
-                    <option value="Oración y Enseñanza">Oración y Enseñanza</option>
-                    <option value="Jóvenes Generación Vida">Jóvenes Generación Vida</option>
-                    <option value="Culto General / Especial">Culto General / Especial</option>
-                    <option value="Culto de Misiones">Culto de Misiones</option>
-                    <option value="Culto de Damas Dorcas">Culto de Damas Dorcas</option>
-                    <option value="Culto de Caballeros">Culto de Caballeros</option>
-                    <option value="Vigilia de Oración">Vigilia de Oración</option>
-                    <option value="Ayuno y Oración">Ayuno y Oración</option>
-                    <option value="Culto de Acción de Gracias">Culto de Acción de Gracias</option>
-                    <option value="Culto de Primicias">Culto de Primicias</option>
-                    <option value="Culto de Fin de Año">Culto de Fin de Año</option>
-                </select>
-            </div>
+            <!-- Controles y Selectores de Culto & Ujier -->
+            <div class="service-selector-group" id="serviceSelectorGroup">
+                <!-- FECHA -->
+                <div class="input-pill">
+                    <label>📅 Fecha:</label>
+                    <input type="date" id="serviceDate" onchange="onServiceContextChange()">
+                </div>
 
-            <!-- UJIER EN TURNO (FIRMA OBLIGATORIA) -->
-            <div class="input-pill ujier-pill" id="ujierPillContainer">
-                <label title="Ujier responsable que firma y asume el registro del culto">✍️ Firma Ujier:</label>
-                <select id="serviceUjier" onchange="onUjierChange()">
-                    <option value="">Seleccionar Ujier...</option>
-                </select>
-                <button type="button" class="btn-ujier-manage" onclick="openManageUjieresModal()" title="Gestionar Ujieres (agregar, modificar o retirar)">👥 Ujieres</button>
-            </div>
+                <!-- CULTO -->
+                <div class="input-pill">
+                    <label>⛪ Culto:</label>
+                    <select id="serviceCulto" onchange="onServiceContextChange()">
+                        <option value="Escuela Dominical">Escuela Dominical</option>
+                        <option value="Oración y Enseñanza">Oración y Enseñanza</option>
+                        <option value="Jóvenes Generación Vida">Jóvenes Generación Vida</option>
+                        <option value="Culto General / Especial">Culto General / Especial</option>
+                        <option value="Culto de Misiones">Culto de Misiones</option>
+                        <option value="Culto de Damas Dorcas">Culto de Damas Dorcas</option>
+                        <option value="Culto de Caballeros">Culto de Caballeros</option>
+                        <option value="Vigilia de Oración">Vigilia de Oración</option>
+                        <option value="Ayuno y Oración">Ayuno y Oración</option>
+                        <option value="Culto de Acción de Gracias">Culto de Acción de Gracias</option>
+                        <option value="Culto de Primicias">Culto de Primicias</option>
+                        <option value="Culto de Fin de Año">Culto de Fin de Año</option>
+                    </select>
+                </div>
 
-            <!-- TRANSMISIÓN ONLINE -->
-            <div class="input-pill stream-pill" title="Número de espectadores en YouTube / Facebook Live">
-                <label><span class="pulse-dot"></span> En Vivo:</label>
-                <input type="number" id="streamViewers" class="stream-input" min="0" placeholder="0">
-                <button class="btn-stream-save" onclick="saveStreamViewers()" title="Guardar aforo online">Guardar</button>
+                <!-- UJIER EN TURNO -->
+                <div class="input-pill ujier-pill" id="ujierPillContainer">
+                    <label title="Ujier responsable que firma y asume el registro">✍️ Ujier:</label>
+                    <select id="serviceUjier" onchange="onUjierChange()">
+                        <option value="">Seleccionar Ujier...</option>
+                    </select>
+                    <button type="button" class="btn-ujier-manage" onclick="openManageUjieresModal()" title="Gestionar Ujieres">👥</button>
+                </div>
+
+                
             </div>
         </div>
 
-        <!-- CONTADORES EN VIVO INTERACTIVOS (TOCA PARA VER LA LISTA DE ASISTENTES) -->
-        <div class="live-metrics-chips">
-            <div class="metric-chip chip-total interactive-chip" id="chipTotal" onclick="openAttendeesModal('Todos')" title="Toca para ver todos los presentes en este culto">
-                <span>Presentes:</span> <span id="valTotal">0</span>
-                <span class="chip-action-hint">👁️ Ver</span>
+        <!-- 5 TARJETAS DE DESGLOSE PASTEL (INTERACTIVAS) -->
+        <div class="pastel-metrics-grid" data-tab="reportes">
+            <!-- Hermanos -->
+            <div class="pastel-metric-card card-hermanos" id="chipHermanos" onclick="openAttendeesModal('Hermano')" title="Toca para ver Hermanos presentes">
+                <div class="pastel-card-header">
+                    <span class="pastel-card-tag">
+                        <span class="pastel-card-dot"></span>
+                        <span>Hermanos</span>
+                    </span>
+                    <span class="pastel-card-hint">👁️</span>
+                </div>
+                <div class="pastel-card-numbers">
+                    <span class="pastel-count-big" id="valHermanos">0</span>
+                    <span class="pastel-pct-pill" id="pctHermanos">0%</span>
+                </div>
             </div>
-            <div class="metric-chip chip-hermanos interactive-chip" id="chipHermanos" onclick="openAttendeesModal('Hermano')" title="Toca para ver la lista de Hermanos presentes">
-                <span class="dot-chip"></span><span>Hermanos:</span> <span id="valHermanos">0</span>
-                <span class="chip-action-hint">👁️</span>
+
+            <!-- Amigos -->
+            <div class="pastel-metric-card card-amigos" id="chipAmigos" onclick="openAttendeesModal('Amigo')" title="Toca para ver Amigos presentes">
+                <div class="pastel-card-header">
+                    <span class="pastel-card-tag">
+                        <span class="pastel-card-dot"></span>
+                        <span>Amigos</span>
+                    </span>
+                    <span class="pastel-card-hint">👁️</span>
+                </div>
+                <div class="pastel-card-numbers">
+                    <span class="pastel-count-big" id="valAmigos">0</span>
+                    <span class="pastel-pct-pill" id="pctAmigos">0%</span>
+                </div>
             </div>
-            <div class="metric-chip chip-amigos interactive-chip" id="chipAmigos" onclick="openAttendeesModal('Amigo')" title="Toca para ver la lista de Amigos presentes">
-                <span class="dot-chip"></span><span>Amigos:</span> <span id="valAmigos">0</span>
-                <span class="chip-action-hint">👁️</span>
+
+            <!-- Visitas -->
+            <div class="pastel-metric-card card-visitas" id="chipVisitas" onclick="openAttendeesModal('Visita')" title="Toca para ver Visitas presentes">
+                <div class="pastel-card-header">
+                    <span class="pastel-card-tag">
+                        <span class="pastel-card-dot"></span>
+                        <span>Visitas</span>
+                    </span>
+                    <span class="pastel-card-hint">👁️</span>
+                </div>
+                <div class="pastel-card-numbers">
+                    <span class="pastel-count-big" id="valVisitas">0</span>
+                    <span class="pastel-pct-pill" id="pctVisitas">0%</span>
+                </div>
             </div>
-            <div class="metric-chip chip-visitas interactive-chip" id="chipVisitas" onclick="openAttendeesModal('Visita')" title="Toca para ver la lista de Visitas presentes">
-                <span class="dot-chip"></span><span>Visitas:</span> <span id="valVisitas">0</span>
-                <span class="chip-action-hint">👁️</span>
+
+            <!-- Niños -->
+            <div class="pastel-metric-card card-ninos" id="chipNinos" onclick="openAttendeesModal('Niño')" title="Toca para ver Niños presentes">
+                <div class="pastel-card-header">
+                    <span class="pastel-card-tag">
+                        <span class="pastel-card-dot"></span>
+                        <span>Niños</span>
+                    </span>
+                    <span class="pastel-card-hint">👁️</span>
+                </div>
+                <div class="pastel-card-numbers">
+                    <span class="pastel-count-big" id="valNinos">0</span>
+                    <span class="pastel-pct-pill" id="pctNinos">0%</span>
+                </div>
             </div>
-            <div class="metric-chip chip-ninos interactive-chip" id="chipNinos" onclick="openAttendeesModal('Niño')" title="Toca para ver la lista de Niños presentes">
-                <span class="dot-chip"></span><span>Niños:</span> <span id="valNinos">0</span>
-                <span class="chip-action-hint">👁️</span>
+
+            <!-- En Línea (Interactivo) -->
+            <div class="pastel-metric-card card-online" id="chipOnline" title="Audiencia en vivo YouTube" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div class="pastel-card-header">
+                    <span class="pastel-card-tag">
+                        <span class="pastel-card-dot"></span>
+                        <span>En Línea</span>
+                    </span>
+                    <span class="pulse-dot"></span>
+                </div>
+                <div class="pastel-card-numbers" style="align-items: center; gap: 8px;">
+                    <input type="number" id="streamViewers" class="stream-input" min="0" placeholder="0" style="width: 60px; font-size: 16px; font-weight: bold; border: 1px solid rgba(225, 238, 253, 0.9); border-radius: 6px; padding: 4px; text-align: center; color: var(--text-primary); background: rgba(255, 255, 255, 0.8);">
+                    <button class="btn-stream-save" onclick="saveStreamViewers()" title="Guardar aforo online" style="width: 32px; height: 32px; border-radius: 6px; border: none; background: #3b82f6; color: white; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">✓</button>
+                </div>
             </div>
-            <div class="metric-chip chip-online" id="chipOnline" title="Espectadores Transmisión YouTube">
-                <span class="dot-chip"></span><span>En Línea:</span> <span id="valOnline">0</span>
-            </div>
-            <!-- DESCARGAR INFORME POR CULTO (EXCEL Y PDF) -->
-            <div style="display:flex;gap:6px;align-items:center;">
-                <button type="button" class="btn-export-culto" onclick="downloadCurrentCultoReport('excel')" title="Descargar informe en Excel">
-                    📊 Excel
+        </div>
+        <div class="export-actions-group" data-tab="reportes" style="margin-top: 15px; margin-bottom: 25px; display: flex; justify-content: center; gap: 15px;">
+                <button type="button" class="btn-export-excel" onclick="downloadCurrentCultoReport('excel')" title="Descargar informe en Excel">
+                    📊 Exportar Excel
                 </button>
-                <button type="button" class="btn-export-culto" style="background:#dc2626;border-color:#dc2626;color:#ffffff;" onclick="downloadCurrentCultoReport('pdf')" title="Descargar / Imprimir en PDF con membrete oficial y firma del Ujier">
-                    📄 PDF
+                <button type="button" class="btn-export-pdf" onclick="downloadCurrentCultoReport('pdf')" title="Descargar / Imprimir en PDF oficial">
+                    📄 Generar PDF
+                </button>
+            </div>
+
+        
+    </section>
+
+    <!-- BANNER DINÁMICO DE CUMPLEAÑOS DE LA SESIÓN DE CULTO (SSR PRE-RENDERIZADO) -->
+    {% set hoy_list = birthday_alerts.hoy if birthday_alerts and birthday_alerts.hoy else [] %}
+    {% set prox_list = birthday_alerts.proximos if birthday_alerts and birthday_alerts.proximos else [] %}
+    {% set rec_list = birthday_alerts.recientes if birthday_alerts and birthday_alerts.recientes else [] %}
+    {% set has_alerts = (hoy_list|length > 0) or (prox_list|length > 0) or (rec_list|length > 0) %}
+
+    <section class="birthday-session-banner" data-tab="asistencia" {% if hoy_list|length > 0 %}banner-celebration-today{% elif prox_list|length > 0 %}banner-upcoming-week{% elif rec_list|length > 0 %}banner-recent-days{% endif %}" id="birthdaySessionBanner" style="display: {% if has_alerts %}block{% else %}none{% endif %};">
+        <div class="birthday-banner-inner">
+            <div class="birthday-banner-left">
+                <div class="birthday-icon-pulse" id="birthdayBannerIcon" onclick="BirthdayCelebrationEngine.celebrate()" title="¡Haz clic para celebrar con confeti y globos!">
+                    {% if hoy_list|length > 0 %}🎉{% elif prox_list|length > 0 %}🎂{% else %}🎈{% endif %}
+                </div>
+                <div class="birthday-banner-text">
+                    <div class="birthday-banner-title" id="birthdayBannerTitle">
+                        {% if hoy_list|length > 0 %}
+                            🌟 ¡HOY ESTÁ DE CUMPLEAÑOS! ({{ hoy_list|length }} hermano{{ 's' if hoy_list|length > 1 else '' }})
+                        {% elif prox_list|length > 0 %}
+                            🎂 Próximos Cumpleaños en la Semana ({{ prox_list|length }})
+                        {% elif rec_list|length > 0 %}
+                            🎈 Cumpleaños Recientes
+                        {% else %}
+                            🎉 ¡Cumpleañeros en este Culto!
+                        {% endif %}
+                    </div>
+                    <div class="birthday-banner-desc" id="birthdayBannerDesc">
+                        {% if hoy_list|length > 0 %}
+                            {% for h in hoy_list %}<strong>{{ h.nombre }}</strong>{% if not loop.last %}, {% endif %}{% endfor %} está de aniversario hoy. ¡El equipo de ujieres y la congregación les felicitamos con amor cristiano!
+                        {% elif prox_list|length > 0 %}
+                            <strong>{{ prox_list[0].nombre }}</strong> ({{ prox_list[0].etiqueta }}, {{ prox_list[0].dia }} de {{ prox_list[0].mes }}){% if prox_list|length > 1 %} y {{ prox_list|length - 1 }} hermano(s) más{% endif %} cumplen años en los próximos días.
+                        {% elif rec_list|length > 0 %}
+                            <strong>{{ rec_list[0].nombre }}</strong> cumplió años {{ rec_list[0].etiqueta }} ({{ rec_list[0].dia }} de {{ rec_list[0].mes }}). ¡Aún puedes darle tu saludo!
+                        {% else %}
+                            Cargando información...
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="birthday-banner-actions">
+                <button type="button" class="btn-banner-wa" id="bannerWaBtn" onclick="openWhatsappForNextBirthday()" title="Felicitar por WhatsApp con un mensaje bíblico">
+                    <span>📲</span> WhatsApp
+                </button>
+                <button type="button" class="btn-banner-action" onclick="openCumpleanosModal('culto')" title="Abrir Visor Premium de Cumpleaños">
+                    <span>🌟</span> Ver & Felicitar
+                </button>
+                <button type="button" class="btn-banner-close" onclick="dismissBirthdayBanner()" title="Ocultar recordatorio en esta sesión">
+                    ✕
                 </button>
             </div>
         </div>
     </section>
 
     <!-- ÁREA PRINCIPAL -->
-    <main class="main-container">
+    <main class="main-container" data-tab="asistencia">
+
         <!-- COLUMNA IZQUIERDA: BÚSQUEDA Y REGISTRO -->
         <div class="card search-main-card" id="searchCardSection">
             <div class="search-header">
-                <span class="section-title">Buscar Asistente</span>
-                <label style="font-size: 11px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <div class="section-title-group">
+                    <div class="section-title-bar"></div>
+                    <div>
+                        <span class="section-title">Buscar Asistente</span>
+                        <div class="section-subtitle">Búsqueda fonética inteligente y marcación en 1 clic</div>
+                    </div>
+                </div>
+                <label style="font-size: 11px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600;">
                     <input type="checkbox" id="chkIncludeInactive" onchange="onIncludeInactiveChange()"> Ver desagregados
                 </label>
             </div>
 
-            <div class="search-input-wrapper">
-                <svg class="search-icon-inside" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <label class="sr-only" for="searchInput">Buscar asistente por nombre o apellido</label>
+            <div class="search-input-wrapper" role="search">
+                <svg class="search-icon-inside" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
                 <input type="text" 
                        id="searchInput" 
                        class="search-input" 
-                       placeholder="Escribe nombre, apellido o apodo (ej. Manu, Rafa, Yois)...">
+                       placeholder="Escribe nombre, apellido o apodo (ej. Manu, Rafa, Yois)..."
+                       autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       spellcheck="false"
+                       enterkeyhint="search"
+                       aria-label="Buscar asistente por nombre o apellido">
+                <button type="button" id="btnClearSearch" class="btn-clear-search" onclick="clearSearchInput()" title="Limpiar y salir de búsqueda" aria-label="Limpiar búsqueda y salir" style="display:none;">✕</button>
+                <span class="search-kbd-hint" aria-hidden="true">↵ Enter</span>
             </div>
 
-            <!-- BOTÓN ÚNICO DE REGISTRO NUEVO (DEBAJO DE LA CAJA DE BÚSQUEDA) -->
-            <button class="btn-new-main" onclick="openNewMemberModal()" style="margin-top: 10px;">
-                <span>+</span> Registrar Nuevo
+            <!-- BOTÓN HERO: REGISTRAR ASISTENTE NUEVO -->
+            <button class="btn-new-main" onclick="openNewMemberModal()">
+                <span>+</span> Registrar Asistente Nuevo
             </button>
 
-            <div class="search-hint">
-                <span>Tolera faltas de ortografía y apodos comunes</span>
-                <span id="resultsCount"></span>
+            <!-- CHIPS DE FILTRADO RÁPIDO POR MINISTERIO -->
+            <div class="ministry-chips-section">
+                <span class="ministry-chips-label">Filtros rápidos por comité & ministerio</span>
+                <div class="ministry-chips-list">
+                    <button type="button" class="ministry-chip active" onclick="filterByMinistry('', this)">Todos</button>
+                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Jóvenes', this)">👥 Jóvenes</button>
+                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Alabanza', this)">🎵 Alabanza</button>
+                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Ujieres', this)">🛡️ Ujieres</button>
+                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Escuela Bíblica', this)">👶 Escuela Bíblica</button>
+                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Damas', this)">🌸 Damas Doradas</button>
+                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Caballeros', this)">👔 Caballeros</button>
+                </div>
             </div>
 
-            <div class="results-scroll" id="resultsList"></div>
+            <div class="search-hint">
+                <span>✨ Tolera faltas de ortografía y apodos comunes</span>
+                <span id="resultsCount" role="status" aria-live="polite"></span>
+            </div>
+
+            <div class="results-scroll" id="resultsList" role="region" aria-label="Resultados de búsqueda de asistentes"></div>
         </div>
 
         <!-- COLUMNA DERECHA: FICHA, ALERTA Y MARCADO (VISIBLE AL SELECCIONAR ASISTENTE) -->
@@ -265,7 +424,7 @@
     </main>
 
     <!-- MODAL NUEVO ASISTENTE -->
-    <div class="modal-overlay" id="newMemberModal">
+    <div class="modal-overlay" id="newMemberModal" data-tab="agregar" onclick="if(event.target===this) closeNewMemberModal()">
         <div class="modal-card">
             <div class="modal-header">
                 <h3 class="modal-title" id="newModalTitle">+ Registrar Nuevo Asistente</h3>
@@ -317,7 +476,7 @@
     </div>
 
     <!-- MODAL DE MODIFICACIONES Y GESTIÓN -->
-    <div class="modal-overlay" id="editMemberModal">
+    <div class="modal-overlay" id="editMemberModal" onclick="if(event.target===this) closeEditModal()">
         <div class="modal-card">
             <div class="modal-header">
                 <h3 class="modal-title">✏️ Apartado de Modificaciones / Desagregar</h3>
@@ -461,7 +620,7 @@
     </div>
 
     <!-- MODAL DASHBOARD DE ANALÍTICA E HISTÓRICO (INLINE SPA) -->
-    <div class="modal-overlay" id="analyticsModal" style="display: none; z-index: 1200;" onclick="if(event.target === this) closeAnalyticsModal()">
+    <div class="modal-overlay" id="analyticsModal" data-tab="reportes" style="display: none; z-index: 1200;" onclick="if(event.target === this) closeAnalyticsModal()">
         <div class="analytics-modal-card">
             <div class="analytics-modal-header">
                 <div style="display:flex;align-items:center;gap:12px;">
@@ -586,13 +745,16 @@
                 </div>
 
                 <!-- TABLA DE SEGUIMIENTO PASTORAL A AMIGOS Y VISITAS -->
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                        <div>
-                            <div class="section-title">🤝 Seguimiento Pastoral: Amigos y Visitas</div>
-                            <div style="font-size: 12px; color: var(--text-muted);">Listado de personas en proceso para atención pastoral y WhatsApp directo</div>
+                
+                    <div class="card collapsible-block">
+                        <div class="collapsible-block-header" onclick="this.parentElement.classList.toggle('is-open')">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-size: 16px;">🤝 Seguimiento Pastoral</span>
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">Amigos y Visitas</span>
+                            </div>
                         </div>
-                    </div>
+                        <div class="collapsible-block-content">
+                        
 
                     <div style="overflow-x: auto;">
                         <table class="friends-table">
@@ -617,7 +779,347 @@
         </div>
     </div>
 
+    </div>
+    <!-- =========================================================
+         MODAL DEL VISOR PREMIUM DE CUMPLEAÑOS (IPUE GRANADA)
+    ========================================================= -->
+    <div class="modal-overlay" id="modalCumpleanos" data-tab="cumpleanos" style="display:none;" onclick="if(event.target===this)closeCumpleanosModal()">
+        <div class="modal-content modal-cumpleanos-container" onclick="event.stopPropagation()">
+            <!-- HERO HEADER CELEBRATORIO -->
+            <div class="cumple-modal-header">
+                <div class="cumple-header-left">
+                    <h2 class="cumple-modal-title">🎂 Calendario & Recordatorio de Cumpleaños</h2>
+                    <p class="cumple-modal-subtitle">Directorio de aniversarios de la congregación con alertas dinámicas para ujieres y atención pastoral</p>
+                </div>
+
+                <div class="cumple-header-stats">
+                    <div class="cumple-stat-pill stat-hoy" id="cumpleStatHoyBox" title="Cumpleañeros en la fecha activa del culto">
+                        <span class="stat-icon">🎉</span>
+                        <div class="stat-text">
+                            <span class="stat-num" id="cumpleStatHoy">0</span>
+                            <span class="stat-lbl">Hoy de Fiesta</span>
+                        </div>
+                    </div>
+                    <div class="cumple-stat-pill stat-mes" title="Cumpleaños en este mes">
+                        <span class="stat-icon">📅</span>
+                        <div class="stat-text">
+                            <span class="stat-num" id="cumpleStatMes">0</span>
+                            <span class="stat-lbl">En este Mes</span>
+                        </div>
+                    </div>
+                    <div class="cumple-stat-pill stat-total" title="Total aniversarios registrados">
+                        <span class="stat-icon">👥</span>
+                        <div class="stat-text">
+                            <span class="stat-num" id="cumpleStatTotal">0</span>
+                            <span class="stat-lbl">Registrados</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-modal-close" onclick="closeCumpleanosModal()" title="Cerrar visor">✕</button>
+                </div>
+            </div>
+
+            <!-- BARRA DE PESTAÑAS INTERACTIVAS -->
+            <div class="cumple-tabs-nav">
+                <button type="button" class="cumple-tab-btn active" id="tabBtnCulto" onclick="switchCumpleTab('culto')">
+                    <span>🌟</span> Culto & Alertas Activas
+                </button>
+                <button type="button" class="cumple-tab-btn" id="tabBtnMeses" onclick="switchCumpleTab('meses')">
+                    <span>📅</span> Calendario 12 Meses
+                </button>
+                <button type="button" class="cumple-tab-btn" id="tabBtnDirectorio" onclick="switchCumpleTab('directorio')">
+                    <span>📖</span> Directorio & Gestión
+                </button>
+                <button type="button" class="cumple-tab-btn" id="tabBtnImprimir" onclick="switchCumpleTab('imprimir')">
+                    <span>🖨️</span> Boletín & Exportar
+                </button>
+            </div>
+
+            <!-- CONTENIDO DE PESTAÑAS -->
+            <div class="cumple-modal-body">
+                <!-- PESTAÑA 1: CULTO Y PRÓXIMOS (ALERTAS ACTIVAS) -->
+                <div class="cumple-tab-pane active" id="paneCumpleCulto">
+                    <div class="culto-context-alert" id="cultoContextAlertBar">
+                        <span id="cultoContextAlertText">📅 Evaluando cumpleaños según fecha del culto: ...</span>
+                    </div>
+
+                    <!-- SECCIÓN: CUMPLEAÑEROS DE HOY -->
+                    <div class="cumple-section-box section-hoy">
+                        <div class="cumple-section-header">
+                            <div class="section-title-wrap">
+                                <span class="badge-fire">🔥 HOY</span>
+                                <h3 class="cumple-section-title">¡Celebrando Hoy su Cumpleaños!</h3>
+                            </div>
+                            <span class="cumple-section-sub" id="subTitleHoy">Hermanos que están de fiesta en este día</span>
+                        </div>
+                        <div class="cumple-cards-grid" id="gridCumpleHoy">
+                            <div class="empty-state-cumple">Cargando cumpleañeros de hoy...</div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN: PRÓXIMOS CUMPLEAÑOS -->
+                    <div class="cumple-section-box section-proximos" style="margin-top:20px;">
+                        <div class="cumple-section-header">
+                            <div class="section-title-wrap">
+                                <span class="badge-upcoming">⏳ PRÓXIMOS</span>
+                                <h3 class="cumple-section-title">Próximos Cumpleaños (Próximos 14 Días)</h3>
+                            </div>
+                            <span class="cumple-section-sub">Anticípese para felicitar, orar y preparar la bienvenida en el culto</span>
+                        </div>
+                        <div class="cumple-cards-grid" id="gridCumpleProximos">
+                            <div class="empty-state-cumple">Cargando próximos cumpleaños...</div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN: CUMPLIERON RECIENTEMENTE -->
+                    <div class="cumple-section-box section-recientes" style="margin-top:20px;" id="boxCumpleRecientes">
+                        <div class="cumple-section-header">
+                            <div class="section-title-wrap">
+                                <span class="badge-recent">📌 RECIENTES</span>
+                                <h3 class="cumple-section-title">Cumplieron en Días Recientes (Últimos 3 Días)</h3>
+                            </div>
+                            <span class="cumple-section-sub">Aún está a tiempo de brindarles una cálida felicitación cristiana</span>
+                        </div>
+                        <div class="cumple-cards-grid" id="gridCumpleRecientes">
+                            <div class="empty-state-cumple">No hay cumpleaños en los últimos 3 días.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PESTAÑA 2: CALENDARIO ANUAL (12 MESES) -->
+                <div class="cumple-tab-pane" id="paneCumpleMeses">
+                    <!-- SELECTOR DE MESES (12 BOTONES ESTILO PILL) -->
+                    <div class="month-pills-bar" id="monthPillsBar">
+                        <!-- Generado dinámicamente: Enero .. Diciembre -->
+                    </div>
+
+                    <!-- BARRA DE BÚSQUEDA Y FILTRO DENTRO DE MESES -->
+                    <div class="month-filter-row">
+                        <div class="search-input-wrapper" style="flex:1;min-width:240px;">
+                            <svg class="search-icon-inside" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input type="text" id="inputFilterMonthCumple" class="search-input" placeholder="Buscar por nombre, día o mes en todo el año (ej. 22, Blanca, Septiembre)..." oninput="renderSelectedMonthBirthdays()">
+                        </div>
+                        <div class="month-stats-badge" id="monthStatsBadge">
+                            <span>0 cumpleañeros</span>
+                        </div>
+                    </div>
+
+                    <!-- GRID DE TARJETAS DEL MES SELECCIONADO -->
+                    <div class="cumple-cards-grid" id="gridSelectedMonthCumple" style="margin-top:16px;">
+                        <div class="empty-state-cumple">Selecciona un mes para ver los cumpleaños.</div>
+                    </div>
+                </div>
+
+                <!-- PESTAÑA 3: DIRECTORIO COMPLETO & GESTIÓN CRUD -->
+                <div class="cumple-tab-pane" id="paneCumpleDirectorio">
+                    <div class="directorio-toolbar">
+                        <div class="directorio-search-group">
+                            <div class="search-input-wrapper" style="flex:2;min-width:220px;">
+                                <svg class="search-icon-inside" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <input type="text" id="inputDirectorioSearch" class="search-input" placeholder="Buscar hermano/a en todo el año..." oninput="filterDirectorioTable()">
+                            </div>
+                            <select id="selectDirectorioMonthFilter" class="form-control" style="flex:1;min-width:140px;padding:9px 12px;font-size:13px;" onchange="filterDirectorioTable()">
+                                <option value="">Todos los Meses (1-12)</option>
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn-modal-save" style="width:auto;padding:9px 18px;font-size:13px;display:flex;align-items:center;gap:6px;" onclick="openNewCumpleModal()">
+                            <span>➕</span> Agregar Cumpleaños
+                        </button>
+                    </div>
+
+                    <div style="overflow-x: auto; margin-top:14px;">
+                        <table class="friends-table cumple-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:70px;">Fecha</th>
+                                    <th>Nombre del Cumpleañero</th>
+                                    <th>Categoría / Rol</th>
+                                    <th>Nota / Parentesco</th>
+                                    <th>Teléfono</th>
+                                    <th style="width:140px;text-align:center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cumpleTableBody">
+                                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Cargando directorio...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PESTAÑA 4: BOLETÍN & EXPORTAR -->
+                <div class="cumple-tab-pane" id="paneCumpleImprimir">
+                    <div class="print-toolbar-box">
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <span style="font-weight:700;font-size:13px;color:var(--text-primary);">Seleccionar Mes para Boletín:</span>
+                            <select id="selectPrintMonth" class="form-control" style="width:auto;padding:8px 14px;font-weight:700;" onchange="renderPrintPreview()">
+                                <option value="">Todos los Meses (Anual)</option>
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="button" class="btn-csv" onclick="downloadCumpleCSV()" title="Descargar en formato Excel / CSV">
+                                📊 Descargar CSV
+                            </button>
+                            <button type="button" class="btn-modal-save" style="width:auto;padding:8px 16px;background:#dc2626;border-color:#dc2626;color:#ffffff;" onclick="printCumpleBulletin()" title="Imprimir boletín mensual para el pastorado y cartelera">
+                                🖨️ Imprimir Boletín
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="print-preview-container" id="printPreviewContainer">
+                        <!-- Hoja con membrete oficial lista para imprimir -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL CREAR / EDITAR CUMPLEAÑOS
+    ========================================================= -->
+    <div class="modal-overlay" id="modalEditCumpleanos" style="display:none;z-index:1100;" onclick="if(event.target===this)closeEditCumpleModal()">
+        <div class="modal-content modal-sub-small" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span class="modal-title" id="editCumpleModalTitle">🎂 Agregar Cumpleaños</span>
+                <button type="button" class="btn-modal-close" onclick="closeEditCumpleModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCumpleId">
+                <div class="form-group">
+                    <label>Nombre Completo:</label>
+                    <input type="text" id="editCumpleNombre" class="form-control" placeholder="Ej. Ricardo Miranda">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label>Día (1-31):</label>
+                        <input type="number" id="editCumpleDia" class="form-control" min="1" max="31" placeholder="Ej. 15">
+                    </div>
+                    <div class="form-group">
+                        <label>Mes:</label>
+                        <select id="editCumpleMesNum" class="form-control">
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3">Marzo</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Mayo</option>
+                            <option value="6">Junio</option>
+                            <option value="7">Julio</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Nota / Cargo / Parentesco (Opcional):</label>
+                    <input type="text" id="editCumpleNota" class="form-control" placeholder="Ej. Esposa del Pastor, Hijo de María, Amiga...">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono / WhatsApp (Opcional):</label>
+                    <input type="tel" id="editCumpleTelefono" class="form-control" placeholder="Ej. +34 600 000 000">
+                </div>
+                <div class="form-group">
+                    <label>Enlazar con Hermano/a en la Base de Datos:</label>
+                    <select id="editCumpleMemberId" class="form-control">
+                        <option value="">(Sin enlazar / Externo)</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:16px;">
+                    <button type="button" class="btn-modal-cancel" onclick="closeEditCumpleModal()">Cancelar</button>
+                    <button type="button" class="btn-modal-save" onclick="saveCumpleanosRecord()">Guardar Cumpleaños</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL GENERADOR DE FELICITACIÓN POR WHATSAPP
+    ========================================================= -->
+    <div class="modal-overlay wa-overlay" id="modalWhatsappGreeting" style="display:none;z-index:2000000;" onclick="if(event.target===this)closeWhatsappModal()">
+        <div class="wa-composer" onclick="event.stopPropagation()">
+            <header class="wa-composer-header">
+                <div class="wa-header-icon">📲</div>
+                <div class="wa-header-text">
+                    <h3>Bendición por WhatsApp</h3>
+                    <p id="waRecipientName">Hermano/a</p>
+                </div>
+                <button type="button" class="wa-close" onclick="closeWhatsappModal()" aria-label="Cerrar">✕</button>
+            </header>
+
+            <div class="wa-composer-body">
+                <div class="wa-field">
+                    <label for="waRecipientPhone">Número de WhatsApp (formato internacional)</label>
+                    <input type="tel" id="waRecipientPhone" class="form-control" placeholder="+34 600 000 000" inputmode="tel" autocomplete="tel">
+                    <div class="wa-note">💡 Si escribes solo 9 dígitos se añade <strong>+34</strong>. Requiere tener WhatsApp instalado en este teléfono y que el número de destino use WhatsApp.</div>
+                </div>
+
+                <div class="wa-field">
+                    <label>Modelo de bendición</label>
+                    <div class="wa-template-chips">
+                        <button type="button" class="wa-chip active" data-cat="pastoral" onclick="selectWaCategory('pastoral')"><span>🌟</span> Bendición Pastoral</button>
+                        <button type="button" class="wa-chip" data-cat="fraternal" onclick="selectWaCategory('fraternal')"><span>❤️</span> Fraternal y Gratitud</button>
+                        <button type="button" class="wa-chip" data-cat="fortaleza" onclick="selectWaCategory('fortaleza')"><span>🙏</span> Fortaleza y Fe</button>
+                        <button type="button" class="wa-chip" data-cat="invitacion" onclick="selectWaCategory('invitacion')"><span>⛪</span> Invitación al Culto</button>
+                        <button type="button" class="wa-chip" data-cat="gozo" onclick="selectWaCategory('gozo')"><span>🎉</span> Gozo y Celebración</button>
+                        <button type="button" class="wa-chip" data-cat="promesa" onclick="selectWaCategory('promesa')"><span>📖</span> Promesas de Dios</button>
+                    </div>
+                </div>
+
+                <div class="wa-field">
+                    <div class="wa-message-head">
+                        <label for="waMessageText">Mensaje (editable)</label>
+                        <div class="wa-msg-actions">
+                            <button type="button" class="wa-rand" onclick="newRandomWaMessage()" title="Generar otro mensaje al azar de esta categoría">🎲 Otro mensaje</button>
+                            <button type="button" class="wa-reset" onclick="restoreWaMessage()" title="Restaurar el texto original de este mensaje">↺ Restaurar</button>
+                        </div>
+                    </div>
+                    <textarea id="waMessageText" class="wa-message" rows="10" oninput="updateWaCharCount()" placeholder="Escribe tu mensaje..."></textarea>
+                    <div class="wa-options-label" id="waOptionsLabel"></div>
+                    <div class="wa-char-count" id="waCharCount">0 caracteres</div>
+                </div>
+            </div>
+
+            <footer class="wa-composer-footer">
+                <button type="button" class="btn-modal-cancel" onclick="closeWhatsappModal()">Cancelar</button>
+                <button type="button" class="wa-send-btn" onclick="launchWhatsappDirect()">
+                    <span>📲</span> Abrir WhatsApp
+                </button>
+            </footer>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT DE LA APLICACIÓN -->
+
     <script>
         let selectedMember = null;
         let searchDebounce = null;
@@ -628,6 +1130,7 @@
         let memberBeingEdited = null;
         let modalSearchDebounce = null;
         let modalResults = [];
+        let mobileSearchDismissed = false;
 
         function escapeHtml(value) {
             return String(value ?? '')
@@ -735,48 +1238,156 @@
         // 1. INICIALIZACIÓN
         document.addEventListener('DOMContentLoaded', async () => {
             window.scrollTo(0, 0);
-            await initApp();
-            
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    clearTimeout(searchDebounce);
-                    searchDebounce = setTimeout(() => doSearch(e.target.value), 180);
-                });
-                // En móviles, ajustar el scroll al enfocar para evitar que el teclado oculte resultados
-                searchInput.addEventListener('focus', () => {
-                    const group = document.getElementById('serviceSelectorGroup');
-                    if (group && group.classList.contains('mobile-open')) {
-                        group.classList.remove('mobile-open');
-                        const btn = document.getElementById('btnToggleMobileService');
-                        if (btn) btn.textContent = '⚙️ Ajustar ▾';
-                    }
-                    if (window.innerWidth <= 860) {
-                        setTimeout(() => {
-                            const searchCard = document.getElementById('searchCardSection');
-                            if (searchCard) {
-                                const rect = searchCard.getBoundingClientRect();
-                                const offset = window.pageYOffset + rect.top - 58;
-                                window.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
-                            }
-                        }, 280);
-                    }
-                });
-            }
 
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', () => {
-                    if (document.activeElement && document.activeElement.id === 'searchInput' && window.innerWidth <= 860) {
-                        const searchCard = document.getElementById('searchCardSection');
-                        if (searchCard) {
-                            const rect = searchCard.getBoundingClientRect();
-                            const offset = window.pageYOffset + rect.top - 58;
-                            window.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
-                        }
-                    }
-                });
+            // El buscador se prepara ANTES de cargar datos, para que funcione
+            // aunque initApp tarde o falle (evita que "se pierda" el buscador).
+            setupSearchInputListeners();
+            attachSearchViewportListeners();
+
+            try {
+                await initApp();
+            } catch (e) {
+                console.error('Error en initApp:', e);
             }
         });
+
+        function setupSearchInputListeners() {
+            const searchInput = document.getElementById('searchInput');
+            if (!searchInput || searchInput.dataset.searchBound === '1') return;
+            searchInput.dataset.searchBound = '1';
+
+            searchInput.addEventListener('focus', () => {
+                mobileSearchDismissed = false;
+                const group = document.getElementById('serviceSelectorGroup');
+                if (group && group.classList.contains('mobile-open')) {
+                    group.classList.remove('mobile-open');
+                    const btn = document.getElementById('btnToggleMobileService');
+                    if (btn) btn.textContent = '⚙️ Ajustar ▾';
+                }
+                updateMobileSearchState();
+            });
+
+            searchInput.addEventListener('input', (e) => {
+                updateMobileSearchState();
+                clearTimeout(searchDebounce);
+                searchDebounce = setTimeout(() => doSearch(e.target.value), 180);
+            });
+
+            searchInput.addEventListener('blur', () => {
+                // Pequeña espera para permitir que el toque sobre un
+                // resultado se registre antes de decidir si se cierra.
+                setTimeout(() => {
+                    updateMobileSearchState();
+                }, 250);
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    clearSearchInput();
+                }
+            });
+        }
+
+        // --- Pantalla de búsqueda móvil anclada al teclado (visualViewport) ---
+        const MOBILE_SEARCH_MQ = window.matchMedia('(max-width: 860px)');
+        let searchViewportBound = false;
+
+        function isMobileSearchViewport() {
+            return MOBILE_SEARCH_MQ.matches;
+        }
+
+        function syncSearchViewportVars() {
+            if (!document.body.classList.contains('mobile-search-active')) return;
+            const root = document.documentElement;
+            const vv = window.visualViewport;
+            if (vv) {
+                root.style.setProperty('--vv-height', `${Math.round(vv.height)}px`);
+                root.style.setProperty('--vv-top', `${Math.round(vv.offsetTop)}px`);
+            } else {
+                root.style.setProperty('--vv-height', `${window.innerHeight}px`);
+                root.style.setProperty('--vv-top', '0px');
+            }
+        }
+
+        function attachSearchViewportListeners() {
+            if (searchViewportBound) return;
+            searchViewportBound = true;
+            const vv = window.visualViewport;
+            if (vv) {
+                vv.addEventListener('resize', syncSearchViewportVars);
+                vv.addEventListener('scroll', syncSearchViewportVars);
+            }
+            window.addEventListener('resize', syncSearchViewportVars);
+            window.addEventListener('orientationchange', () => setTimeout(syncSearchViewportVars, 200));
+            if (MOBILE_SEARCH_MQ.addEventListener) {
+                MOBILE_SEARCH_MQ.addEventListener('change', (e) => {
+                    if (!e.matches) closeMobileSearchMode();
+                    else syncSearchViewportVars();
+                });
+            }
+        }
+
+        function openMobileSearchMode() {
+            if (!isMobileSearchViewport()) return;
+            attachSearchViewportListeners();
+            document.body.classList.add('mobile-search-active');
+            syncSearchViewportVars();
+        }
+
+        function closeMobileSearchMode() {
+            document.body.classList.remove('mobile-search-active');
+            const root = document.documentElement;
+            root.style.removeProperty('--vv-height');
+            root.style.removeProperty('--vv-top');
+        }
+
+        function updateMobileSearchState() {
+            const searchInput = document.getElementById('searchInput');
+            if (!searchInput) return;
+            const hasText = (searchInput.value.trim().length > 0);
+            
+            const clearBtn = document.getElementById('btnClearSearch');
+            if (clearBtn) {
+                clearBtn.style.display = hasText ? 'flex' : 'none';
+            }
+
+            if (!isMobileSearchViewport()) {
+                closeMobileSearchMode();
+                return;
+            }
+
+            const isFocused = (document.activeElement === searchInput);
+            // Si el usuario tocó un resultado para seleccionarlo, no reabrir
+            // el buscador automáticamente al perder el foco.
+            if (!isFocused && mobileSearchDismissed) {
+                closeMobileSearchMode();
+                return;
+            }
+            if (isFocused || hasText) {
+                openMobileSearchMode();
+            } else {
+                closeMobileSearchMode();
+            }
+        }
+
+        function clearSearchInput() {
+            const input = document.getElementById('searchInput');
+            if (input) {
+                input.value = '';
+                input.blur();
+            }
+            const countEl = document.getElementById('resultsCount');
+            if (countEl) countEl.textContent = '';
+            const resultsList = document.getElementById('resultsList');
+            if (resultsList) resultsList.innerHTML = '';
+            currentResults = [];
+            
+            mobileSearchDismissed = false;
+            closeMobileSearchMode();
+            const clearBtn = document.getElementById('btnClearSearch');
+            if (clearBtn) clearBtn.style.display = 'none';
+        }
 
         // Sugerencia de culto según el día de la semana del dispositivo (0=domingo)
         function suggestCultoPorDia(weekday) {
@@ -852,13 +1463,14 @@
 
             updateMobileServiceSummary();
 
-            // 3. Carga de métricas en vivo
-            try {
-                await updateSummary();
-            } catch (e) {
-                console.warn('Error actualizando métricas:', e);
-            }
+            // 3. Carga simultánea y paralela de métricas y alertas de cumpleaños
+            initCachedBirthdayAlerts(activeDate); // Cero latencia desde caché
+            await Promise.allSettled([
+                updateSummary(),
+                loadBirthdayAlerts(activeDate)
+            ]);
         }
+
 
         let ujieresList = [];
 
@@ -1055,6 +1667,7 @@
             activeCulto = document.getElementById('serviceCulto').value;
             updateMobileServiceSummary();
             await updateSummary();
+            await loadBirthdayAlerts(activeDate);
             
             const q = document.getElementById('searchInput').value;
             if (q.length >= 2) doSearch(q);
@@ -1066,22 +1679,75 @@
             if (q.length >= 2) doSearch(q);
         }
 
-        // 2. CONTADORES EN VIVO
+        // 2. CONTADORES EN VIVO (CON CÁLCULOS DE AFRO Y PORCENTAJES STITCH)
         async function updateSummary() {
             if (!activeDate || !activeCulto) return;
             try {
                 const res = await fetch(`/api/attendance/summary?fecha=${encodeURIComponent(activeDate)}&culto=${encodeURIComponent(activeCulto)}`);
                 const data = await res.json();
-                document.getElementById('valTotal').textContent = data.presenciales;
-                document.getElementById('valHermanos').textContent = data.hermanos;
-                document.getElementById('valAmigos').textContent = data.amigos;
-                document.getElementById('valVisitas').textContent = data.visitas;
-                document.getElementById('valNinos').textContent = data.ninos;
-                document.getElementById('valOnline').textContent = data.transmision_online;
-                document.getElementById('streamViewers').value = data.transmision_online || '';
+                const pres = data.presenciales || 0;
+                const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                setText('valTotal', pres);
+                setText('valHermanos', data.hermanos || 0);
+                setText('valAmigos', data.amigos || 0);
+                setText('valVisitas', data.visitas || 0);
+                setText('valNinos', data.ninos || 0);
+                setText('valOnline', data.transmision_online || 0);
+                const streamInput = document.getElementById('streamViewers');
+                if (streamInput) streamInput.value = data.transmision_online || '';
+
+                // Cálculos de capacidad y porcentajes
+                const totalCap = 120;
+                const pctAforo = Math.min(100, Math.round((pres / totalCap) * 100));
+                const pctEl = document.getElementById('valTotalPct');
+                if (pctEl) pctEl.textContent = `${pctAforo}%`;
+
+                const ringProgress = document.getElementById('capacityRingProgress');
+                if (ringProgress) {
+                    ringProgress.setAttribute('stroke-dasharray', `${pctAforo}, 100`);
+                }
+
+                const capStatus = document.getElementById('capacityStatusText');
+                if (capStatus) {
+                    capStatus.textContent = `Capacidad actual al ${pctAforo}% del santuario central.`;
+                }
+
+                const pctH = pres > 0 ? ((data.hermanos / pres) * 100).toFixed(0) : '0';
+                const pctA = pres > 0 ? ((data.amigos / pres) * 100).toFixed(0) : '0';
+                const pctV = pres > 0 ? ((data.visitas / pres) * 100).toFixed(0) : '0';
+                const pctN = pres > 0 ? ((data.ninos / pres) * 100).toFixed(0) : '0';
+
+                const elH = document.getElementById('pctHermanos');
+                const elA = document.getElementById('pctAmigos');
+                const elV = document.getElementById('pctVisitas');
+                const elN = document.getElementById('pctNinos');
+                if (elH) elH.textContent = `${pctH}%`;
+                if (elA) elA.textContent = `${pctA}%`;
+                if (elV) elV.textContent = `${pctV}%`;
+                if (elN) elN.textContent = `${pctN}%`;
             } catch (e) {
                 console.error('Error actualizando métricas:', e);
             }
+        }
+
+        function filterByMinistry(tag, btn) {
+            document.querySelectorAll('.ministry-chip').forEach(c => c.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            const input = document.getElementById('searchInput');
+            if (input) {
+                input.value = tag;
+                doSearch(tag);
+            }
+            if (tag && isMobileSearchViewport()) {
+                openMobileSearchMode();
+            }
+        }
+
+        function scrollToSearch() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+                document.getElementById('searchInput')?.focus();
+            }, 100);
         }
 
         async function saveStreamViewers() {
@@ -1146,10 +1812,25 @@
                     const fullName = escapeHtml(`${m.nombre} ${m.apellidos}`);
                     const telefono = escapeHtml(m.telefono || '');
                     
+                    const cInfo = m.cumpleanos_info;
+                    let cBadge = '';
+                    if (cInfo) {
+                        if (cInfo.tipo === 'hoy') {
+                            cBadge = `<span class="badge-birthday-today" title="¡Hoy cumple años! Haz clic para felicitar" onclick="event.stopPropagation(); openWhatsappForMember('${escapeHtml(m.nombre)}', '${escapeHtml(m.telefono||'')}', '${escapeHtml(cInfo.nota||'')}')">🎂 ¡HOY! 🎉</span>`;
+                        } else if (cInfo.tipo === 'proximo') {
+                            cBadge = `<span class="badge-birthday-upcoming" title="Próximo cumpleaños">🎂 ${escapeHtml(cInfo.etiqueta)} (${cInfo.dia}/${cInfo.mes})</span>`;
+                        } else if (cInfo.tipo === 'reciente') {
+                            cBadge = `<span class="badge-birthday-recent" title="Cumpleaños reciente">🎈 ${escapeHtml(cInfo.etiqueta)}</span>`;
+                        }
+                    }
+                    
                     return `
-                        <div class="member-item ${isAttended ? 'attended-item' : ''} ${isSelected}" onclick="selectMemberByIdx(${idx})">
+                        <div class="member-item ${isAttended ? 'attended-item' : ''} ${isSelected}" role="button" tabindex="0" aria-label="Seleccionar a ${fullName}" onclick="selectMemberByIdx(${idx})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectMemberByIdx(${idx});}">
                             <div style="flex: 1; min-width: 0;">
-                                <div class="member-name" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${fullName}</div>
+                                <div class="member-name" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <span>${fullName}</span>
+                                    ${cBadge}
+                                </div>
                                 <div class="member-meta">
                                     <span class="category-tag ${catClass}">
                                         <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};display:inline-block;"></span>
@@ -1164,7 +1845,7 @@
                                 ${isAttended 
                                     ? `<span class="attended-badge">✓ (${escapeHtml(m.hora_asistencia || 'Presente')})</span>` 
                                     : `<button type="button" class="btn-quick-mark" onclick="event.stopPropagation(); quickMarkAttendance('${m.id}', this)" title="Marcar asistencia inmediata con 1 toque">✓ Marcar</button>`}
-                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEditModalByIdx(${idx})" title="Modificar datos o desagregar">✏️</button>
+                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openEditModalByIdx(${idx})" title="Modificar datos o desagregar" aria-label="Modificar datos de ${fullName}">✏️</button>
                             </div>
                         </div>
                     `;
@@ -1174,11 +1855,14 @@
             }
         }
 
+
         // 4. SELECCIÓN Y FICHA DETALLADA
         function selectMember(m) {
             selectedMember = m;
             showDetail(m);
             document.querySelectorAll('.member-item').forEach(el => el.classList.remove('selected'));
+            mobileSearchDismissed = true;
+            closeMobileSearchMode();
             // En móvil, desplazar suavemente a la ficha y ocultar el teclado para que no estorbe
             if (window.innerWidth <= 860) {
                 document.activeElement?.blur?.();
@@ -1465,12 +2149,16 @@
         function openNewMemberModal(defaultCat = 'Visita') {
             document.getElementById('newCat').value = defaultCat;
             document.getElementById('newModalTitle').textContent = '+ Registrar Nuevo';
-            document.getElementById('newMemberModal').style.display = 'flex';
+            const modal = document.getElementById('newMemberModal');
+            modal.classList.add('force-visible');
+            modal.style.display = 'flex';
             setTimeout(() => document.getElementById('newNom').focus(), 150);
         }
 
         function closeNewMemberModal() {
-            document.getElementById('newMemberModal').style.display = 'none';
+            const modal = document.getElementById('newMemberModal');
+            modal.classList.remove('force-visible');
+            modal.style.display = 'none';
             document.getElementById('newMemberForm').reset();
         }
 
@@ -1837,13 +2525,17 @@
         let currentModalPeriod = 'ano';
 
         function openAnalyticsModal() {
-            document.getElementById('analyticsModal').style.display = 'flex';
+            const modal = document.getElementById('analyticsModal');
+            modal.classList.add('force-visible');
+            modal.style.display = 'flex';
             loadPeriodModal(currentModalPeriod);
             loadFriendsModal();
         }
 
         function closeAnalyticsModal() {
-            document.getElementById('analyticsModal').style.display = 'none';
+            const modal = document.getElementById('analyticsModal');
+            modal.classList.remove('force-visible');
+            modal.style.display = 'none';
         }
 
         async function loadPeriodModal(period, btn) {
@@ -1980,7 +2672,7 @@
                 }
                 tbody.innerHTML = list.map(m => {
                     const catClass = m.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita';
-                    const tel = m.telefono ? m.telefono.replace(/[^0-9]/g, '') : '';
+                    const tel = normalizeWaPhone(m.telefono);
                     const telDisplay = m.telefono ? escapeHtml(m.telefono) : '<span style="color:var(--text-muted);font-style:italic;">Sin teléfono</span>';
                     const msg = encodeURIComponent(`Hola ${m.nombre}, bendiciones de parte de la Iglesia Pentecostal Unida en Europa - Granada. Nos alegró mucho verte en nuestras reuniones.`);
                     const waBtn = tel ? `<a href="https://wa.me/${tel}?text=${msg}" target="_blank" class="btn-whatsapp">💬 WhatsApp</a>` : '<span style="color:var(--text-muted);font-size:11px;">-</span>';
@@ -2000,6 +2692,1286 @@
                 console.error('Error cargando lista de amigos:', err);
             }
         }
-    </script>
+
+        // =========================================================
+        // MOTOR JAVASCRIPT DEL VISOR PREMIUM DE CUMPLEAÑOS (IPUE)
+        // =========================================================
+        const MESES_NOMBRES = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        let birthdayAlertsData = window.__INITIAL_BIRTHDAY_ALERTS__ || null;
+        let allBirthdaysList = window.__INITIAL_ALL_BIRTHDAYS__ || [];
+        let selectedMonthIdx = (new Date()).getMonth() + 1; // 1-12
+        let birthdayBannerDismissed = false;
+        let activeWaData = { name: '', phone: '', note: '', tpl: 1 };
+
+        // Carga inmediata de caché local para CERO latencia al recargar
+        function initCachedBirthdayAlerts(fecha) {
+            try {
+                const cached = localStorage.getItem('ipue_birthday_alerts_cache');
+                if (!cached) return;
+                const parsed = JSON.parse(cached);
+                if (!parsed || !parsed.alertas) return;
+                // Solo usar la caché si corresponde a la misma fecha de culto;
+                // así una caché vieja nunca oculta la tarjeta de cumpleaños.
+                const target = fecha || activeDate || deviceToday();
+                if (parsed.fecha && parsed.fecha !== target) return;
+                birthdayAlertsData = parsed.alertas;
+                updateBirthdayBannerAndBadges();
+            } catch(e) {}
+        }
+
+        async function loadBirthdayAlerts(dateStr) {
+            const f = dateStr || activeDate || deviceToday();
+            
+            // 1. Mostrar caché de inmediato si aún no hay datos en memoria
+            if (!birthdayAlertsData) {
+                initCachedBirthdayAlerts(f);
+            }
+
+            // 2. Fetch en paralelo al servidor para datos en tiempo real
+            try {
+                const res = await fetch(`/api/cumpleanos/alertas?fecha=${encodeURIComponent(f)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status === 'ok' && data.alertas) {
+                    birthdayAlertsData = data.alertas;
+                    localStorage.setItem('ipue_birthday_alerts_cache', JSON.stringify({
+                        fecha: f,
+                        alertas: data.alertas,
+                        timestamp: Date.now()
+                    }));
+                    updateBirthdayBannerAndBadges();
+                }
+            } catch (e) {
+                console.warn('Error cargando alertas de cumpleaños:', e);
+            }
+        }
+
+        function updateBirthdayBannerAndBadges() {
+            if (!birthdayAlertsData) return;
+            const hoy = birthdayAlertsData.hoy || [];
+            const prox = birthdayAlertsData.proximos || [];
+            const rec = birthdayAlertsData.recientes || [];
+            const totalMes = birthdayAlertsData.total_mes || 0;
+            const totalReg = birthdayAlertsData.total_registrados || 0;
+
+            // 1. Contador en el Header Nav
+            const headerBadge = document.getElementById('headerCumpleBadge');
+            const activeAlertCount = hoy.length + prox.filter(p => p.dias_faltan <= 7).length;
+            if (headerBadge) {
+                if (activeAlertCount > 0) {
+                    headerBadge.textContent = activeAlertCount;
+                    headerBadge.style.display = 'inline-flex';
+                    if (hoy.length > 0) {
+                        headerBadge.classList.add('badge-pulse-gold');
+                    } else {
+                        headerBadge.classList.remove('badge-pulse-gold');
+                    }
+                } else {
+                    headerBadge.style.display = 'none';
+                }
+            }
+
+            // 2. Estadísticas del Modal
+            const statHoyEl = document.getElementById('cumpleStatHoy');
+            const statMesEl = document.getElementById('cumpleStatMes');
+            const statTotEl = document.getElementById('cumpleStatTotal');
+            const boxHoy = document.getElementById('cumpleStatHoyBox');
+
+            if (statHoyEl) statHoyEl.textContent = hoy.length;
+            if (statMesEl) statMesEl.textContent = totalMes;
+            if (statTotEl) statTotEl.textContent = totalReg;
+
+            if (boxHoy) {
+                if (hoy.length > 0) {
+                    boxHoy.classList.add('has-hoy');
+                } else {
+                    boxHoy.classList.remove('has-hoy');
+                }
+            }
+
+            // 3. Banner dinámico de sesión de culto
+            const banner = document.getElementById('birthdaySessionBanner');
+            const bannerIcon = document.getElementById('birthdayBannerIcon');
+            const bannerTitle = document.getElementById('birthdayBannerTitle');
+            const bannerDesc = document.getElementById('birthdayBannerDesc');
+
+            if (banner && !birthdayBannerDismissed) {
+                if (hoy.length > 0 || prox.length > 0 || rec.length > 0) {
+                    setTimeout(() => { if (typeof BirthdayCelebrationEngine !== 'undefined') BirthdayCelebrationEngine.celebrate(); }, 600);
+                }
+                if (hoy.length > 0) {
+                    banner.style.display = 'block';
+                    banner.className = 'birthday-session-banner banner-celebration-today';
+                    bannerIcon.textContent = '🎉';
+                    const namesStr = hoy.map(h => `<strong>${escapeHtml(h.nombre)}</strong>`).join(', ');
+                    bannerTitle.innerHTML = `🌟 ¡HOY ESTÁ DE CUMPLEAÑOS! (${hoy.length} hermano${hoy.length > 1 ? 's' : ''})`;
+                    bannerDesc.innerHTML = `${namesStr} está de aniversario hoy. ¡El equipo de ujieres y la congregación les felicitamos con amor cristiano!`;
+                } else if (prox.filter(p => p.dias_faltan <= 7).length > 0) {
+                    const thisWeek = prox.filter(p => p.dias_faltan <= 7);
+                    banner.style.display = 'block';
+                    banner.className = 'birthday-session-banner banner-upcoming-week';
+                    bannerIcon.textContent = '🎂';
+                    const firstP = thisWeek[0];
+                    const countOthers = thisWeek.length - 1;
+                    const othersText = countOthers > 0 ? ` y ${countOthers} hermano(s) más` : '';
+                    bannerTitle.innerHTML = `🎂 Próximos Cumpleaños en la Semana (${thisWeek.length})`;
+                    bannerDesc.innerHTML = `<strong>${escapeHtml(firstP.nombre)}</strong> (${firstP.etiqueta}, ${firstP.dia} de ${firstP.mes})${othersText} cumplen años en los próximos días.`;
+                } else if (rec.length > 0) {
+                    banner.style.display = 'block';
+                    banner.className = 'birthday-session-banner banner-recent-days';
+                    bannerIcon.textContent = '🎈';
+                    const firstR = rec[0];
+                    bannerTitle.innerHTML = `🎈 Cumpleaños Recientes`;
+                    bannerDesc.innerHTML = `<strong>${escapeHtml(firstR.nombre)}</strong> cumplió años ${firstR.etiqueta} (${firstR.dia} de ${firstR.mes}). ¡Aún puedes darle tu saludo!`;
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
+
+            // 4. Renderizar contenido de la pestaña "Culto & Alertas"
+            renderCultoAlertsTab();
+        }
+
+        function dismissBirthdayBanner() {
+            birthdayBannerDismissed = true;
+            const banner = document.getElementById('birthdaySessionBanner');
+            if (banner) banner.style.display = 'none';
+        }
+
+        function renderCultoAlertsTab() {
+            if (!birthdayAlertsData) return;
+            const hoy = birthdayAlertsData.hoy || [];
+            const prox = birthdayAlertsData.proximos || [];
+            const rec = birthdayAlertsData.recientes || [];
+
+            // Context alert text
+            const alertText = document.getElementById('cultoContextAlertText');
+            if (alertText) {
+                const parts = (birthdayAlertsData.fecha_referencia || '').split('-');
+                let fLimpia = birthdayAlertsData.fecha_referencia;
+                if (parts.length === 3) fLimpia = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                alertText.innerHTML = `📅 Evaluando aniversarios para el culto del <strong>${fLimpia}</strong> (${activeCulto || 'Culto Activo'}). Total en este mes: <strong>${birthdayAlertsData.total_mes}</strong>`;
+            }
+
+            // Grid Hoy
+            const gridHoy = document.getElementById('gridCumpleHoy');
+            const subTitleHoy = document.getElementById('subTitleHoy');
+            if (gridHoy) {
+                if (hoy.length === 0) {
+                    gridHoy.innerHTML = '<div class="empty-state-cumple">No hay hermanos cumpliendo años en esta fecha exacta.</div>';
+                    if (subTitleHoy) subTitleHoy.textContent = 'Ningún hermano cumple años en la fecha seleccionada';
+                } else {
+                    if (subTitleHoy) subTitleHoy.textContent = `${hoy.length} hermano(s) celebrando su vida hoy`;
+                    gridHoy.innerHTML = hoy.map(b => renderBirthdayCard(b, 'hoy')).join('');
+                }
+            }
+
+            // Grid Próximos
+            const gridProx = document.getElementById('gridCumpleProximos');
+            if (gridProx) {
+                if (prox.length === 0) {
+                    gridProx.innerHTML = '<div class="empty-state-cumple">No hay cumpleaños registrados para los próximos 14 días.</div>';
+                } else {
+                    gridProx.innerHTML = prox.map(b => renderBirthdayCard(b, 'proximo')).join('');
+                }
+            }
+
+            // Grid Recientes
+            const boxRecientes = document.getElementById('boxCumpleRecientes');
+            const gridRec = document.getElementById('gridCumpleRecientes');
+            if (boxRecientes && gridRec) {
+                if (rec.length === 0) {
+                    boxRecientes.style.display = 'none';
+                } else {
+                    boxRecientes.style.display = 'block';
+                    gridRec.innerHTML = rec.map(b => renderBirthdayCard(b, 'reciente')).join('');
+                }
+            }
+        }
+
+        function renderBirthdayCard(b, mode = 'normal') {
+            const diaNum = String(b.dia).padStart(2, '0');
+            const mesNom = b.mes || MESES_NOMBRES[(b.mes_num || 1) - 1];
+            const nombre = escapeHtml(b.nombre || '');
+            const nota = escapeHtml(b.nota || '');
+            const categoria = escapeHtml(b.categoria || 'Hermano/a');
+            const tel = escapeHtml(b.telefono || '');
+            const id = escapeHtml(b.id || '');
+
+            let badgeHtml = '';
+            let cardClass = 'cumple-card';
+
+            if (mode === 'hoy') {
+                cardClass += ' card-today';
+                badgeHtml = `<span class="badge-fire" style="font-size:11px;">🎉 ¡HOY!</span>`;
+            } else if (mode === 'proximo') {
+                const label = b.etiqueta || `En ${b.dias_faltan} días`;
+                const sem = b.dia_semana ? ` · ${b.dia_semana}` : '';
+                cardClass += b.dias_faltan <= 3 ? ' card-soon' : '';
+                badgeHtml = `<span class="badge-upcoming" style="font-size:11px;">⏳ ${escapeHtml(label)}${escapeHtml(sem)}</span>`;
+            } else if (mode === 'reciente') {
+                const label = b.etiqueta || `Hace ${b.dias_pasados} días`;
+                badgeHtml = `<span class="badge-recent" style="font-size:11px;">📌 ${escapeHtml(label)}</span>`;
+            }
+
+            // Iniciales
+            const partsN = (b.nombre || '').trim().split(' ');
+            const inits = ((partsN[0] ? partsN[0][0] : '') + (partsN[1] ? partsN[1][0] : '')).toUpperCase() || '🎂';
+
+            return `
+                <div class="${cardClass}" id="cumpleCard_${id}">
+                    <div class="cumple-card-top">
+                        <div class="cumple-date-badge">
+                            <span class="cumple-day-num">${diaNum}</span>
+                            <span class="cumple-month-abbr">${mesNom.substring(0, 3).toUpperCase()}</span>
+                        </div>
+                        <div class="cumple-card-info">
+                            <div class="cumple-name-row">
+                                <span class="cumple-person-name">${nombre}</span>
+                                ${badgeHtml}
+                            </div>
+                            <div class="cumple-meta-tags">
+                                <span class="cumple-tag-category">${categoria}</span>
+                                ${nota ? `<span class="cumple-tag-note" title="${nota}">📝 ${nota}</span>` : ''}
+                                ${tel ? `<span class="cumple-tag-tel">📞 ${tel}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cumple-card-actions">
+                        <button type="button" class="btn-card-wa" onclick="openWhatsappForMember('${escapeHtml(b.nombre)}', '${escapeHtml(b.telefono || '')}', '${escapeHtml(b.nota || '')}', '${b.dia}', '${escapeHtml(b.mes)}')">
+                            <span>📲</span> Felicitar por WhatsApp
+                        </button>
+                        <button type="button" class="btn-card-edit" onclick="openEditCumpleModal('${id}')" title="Modificar fecha o datos">
+                            ✏️
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function openCumpleanosModal(targetTab = 'culto') {
+            const modal = document.getElementById('modalCumpleanos');
+            if (!modal) return;
+            modal.classList.add('force-visible');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            // Activar inmediatamente la pestaña solicitada para renderizado instantáneo
+            switchCumpleTab(targetTab);
+
+            // Cargar datos
+            if (allBirthdaysList.length === 0) {
+                await loadAllBirthdaysData();
+            }
+            await loadBirthdayAlerts(activeDate);
+
+            // Renderizar vistas con datos frescos
+            switchCumpleTab(targetTab);
+
+            // Celebración festiva
+            if (typeof BirthdayCelebrationEngine !== 'undefined') {
+                BirthdayCelebrationEngine.celebrate();
+            }
+        }
+
+        function closeCumpleanosModal() {
+            const modal = document.getElementById('modalCumpleanos');
+            if (modal) {
+                modal.classList.remove('force-visible');
+                modal.style.display = 'none';
+            }
+            document.body.style.overflow = '';
+        }
+
+        async function loadAllBirthdaysData() {
+            try {
+                const res = await fetch('/api/cumpleanos');
+                if (res.ok) {
+                    const data = await res.json();
+                    allBirthdaysList = data.cumpleanos || [];
+                }
+            } catch (e) {
+                console.error('Error cargando lista completa de cumpleaños:', e);
+            }
+        }
+
+        function switchCumpleTab(tabName) {
+            let cleanTab = (tabName || 'culto').toLowerCase().replace('tab-', '').trim();
+            if (!['culto', 'meses', 'directorio', 'imprimir'].includes(cleanTab)) {
+                cleanTab = 'culto';
+            }
+
+            const tabs = ['culto', 'meses', 'directorio', 'imprimir'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                const pane = document.getElementById(`paneCumple${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (btn) btn.classList.toggle('active', t === cleanTab);
+                if (pane) {
+                    if (t === cleanTab) {
+                        pane.classList.add('active');
+                        pane.style.display = 'block';
+                    } else {
+                        pane.classList.remove('active');
+                        pane.style.display = 'none';
+                    }
+                }
+            });
+
+            if (cleanTab === 'meses') {
+                renderMonthPills();
+                renderSelectedMonthBirthdays();
+            } else if (cleanTab === 'directorio') {
+                loadDirectorioTable();
+            } else if (cleanTab === 'imprimir') {
+                renderPrintPreview();
+            } else {
+                renderCultoAlertsTab();
+            }
+        }
+
+        function renderMonthPills() {
+            const bar = document.getElementById('monthPillsBar');
+            if (!bar) return;
+
+            // Calcular conteo por mes
+            const counts = {};
+            for (let i = 1; i <= 12; i++) counts[i] = 0;
+            allBirthdaysList.forEach(b => {
+                const m = parseInt(b.mes_num, 10);
+                if (m >= 1 && m <= 12) counts[m] = (counts[m] || 0) + 1;
+            });
+
+            const curMonth = (new Date()).getMonth() + 1;
+
+            bar.innerHTML = MESES_NOMBRES.map((name, idx) => {
+                const mNum = idx + 1;
+                const isSelected = mNum === selectedMonthIdx ? 'active' : '';
+                const isCurrent = mNum === curMonth ? 'is-current-month' : '';
+                const c = counts[mNum] || 0;
+                return `
+                    <button type="button" class="month-pill ${isSelected} ${isCurrent}" onclick="selectMonthCumple(${mNum})">
+                        <span class="month-pill-name">${name}</span>
+                        <span class="month-pill-count">${c}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectMonthCumple(mNum) {
+            selectedMonthIdx = mNum;
+            renderMonthPills();
+            renderSelectedMonthBirthdays();
+        }
+
+        function normSearchText(s) {
+            return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function renderSelectedMonthBirthdays() {
+            const grid = document.getElementById('gridSelectedMonthCumple');
+            const statsBadge = document.getElementById('monthStatsBadge');
+            const rawQ = (document.getElementById('inputFilterMonthCumple')?.value || '').trim();
+            const searchQ = normSearchText(rawQ);
+
+            if (!grid) return;
+
+            const monthName = MESES_NOMBRES[selectedMonthIdx - 1];
+            let list;
+            let scopeLabel;
+
+            if (searchQ) {
+                // Búsqueda global: por nombre, nota, día o mes (sirve aunque la fecha ya haya pasado).
+                list = allBirthdaysList.filter(b => {
+                    const n = normSearchText(b.nombre);
+                    const not = normSearchText(b.nota);
+                    const mes = normSearchText(b.mes);
+                    const dia = String(b.dia || '');
+                    const diaPad = dia.padStart(2, '0');
+                    const mesNum = String(b.mes_num || '');
+                    const variants = [
+                        `${dia}/${mesNum}`, `${diaPad}/${mesNum}`,
+                        `${dia}-${mesNum}`, `${diaPad}-${mesNum}`,
+                        `${dia} ${mes}`, `${diaPad} ${mes}`,
+                        `${dia} de ${mes}`
+                    ].map(normSearchText);
+                    return n.includes(searchQ) || not.includes(searchQ) || mes.includes(searchQ) ||
+                           dia === searchQ || diaPad === searchQ || mesNum === searchQ ||
+                           variants.some(v => v.includes(searchQ));
+                });
+                scopeLabel = 'todos los meses';
+            } else {
+                list = allBirthdaysList.filter(b => parseInt(b.mes_num, 10) === selectedMonthIdx);
+                scopeLabel = monthName;
+            }
+
+            list.sort((a, b) => {
+                const dMes = (parseInt(a.mes_num, 10) || 0) - (parseInt(b.mes_num, 10) || 0);
+                if (dMes !== 0) return dMes;
+                return (parseInt(a.dia, 10) || 0) - (parseInt(b.dia, 10) || 0);
+            });
+
+            if (statsBadge) {
+                statsBadge.innerHTML = `<span><strong>${list.length}</strong> cumpleañero${list.length === 1 ? '' : 's'} en ${escapeHtml(scopeLabel)}</span>`;
+            }
+
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="empty-state-cumple">No hay cumpleaños${searchQ ? ' que coincidan con la búsqueda' : ' registrados para ' + monthName}.</div>`;
+                return;
+            }
+
+            grid.innerHTML = list.map(b => renderBirthdayCard(b, 'normal')).join('');
+        }
+
+        function loadDirectorioTable() {
+            filterDirectorioTable();
+        }
+
+        function filterDirectorioTable() {
+            const tbody = document.getElementById('cumpleTableBody');
+            const q = (document.getElementById('inputDirectorioSearch')?.value || '').trim().toLowerCase();
+            const filterM = document.getElementById('selectDirectorioMonthFilter')?.value || '';
+
+            if (!tbody) return;
+
+            let list = [...allBirthdaysList];
+
+            if (filterM) {
+                list = list.filter(b => String(b.mes_num) === filterM);
+            }
+
+            if (q) {
+                list = list.filter(b => {
+                    const n = (b.nombre || '').toLowerCase();
+                    const not = (b.nota || '').toLowerCase();
+                    const cat = (b.categoria || '').toLowerCase();
+                    const tel = (b.telefono || '').toLowerCase();
+                    return n.includes(q) || not.includes(q) || cat.includes(q) || tel.includes(q);
+                });
+            }
+
+            list.sort((a, b) => {
+                if (parseInt(a.mes_num, 10) !== parseInt(b.mes_num, 10)) {
+                    return parseInt(a.mes_num, 10) - parseInt(b.mes_num, 10);
+                }
+                return parseInt(a.dia, 10) - parseInt(b.dia, 10);
+            });
+
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">No se encontraron registros de cumpleaños.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.map(b => {
+                const mesNom = b.mes || MESES_NOMBRES[(parseInt(b.mes_num, 10) || 1) - 1];
+                const diaStr = String(b.dia).padStart(2, '0');
+                const catClass = isHermanoCategory(b.categoria) ? 'tag-hermano' : (b.categoria === 'Niño' ? 'tag-nino' : (b.categoria === 'Amigo' ? 'tag-amigo' : 'tag-visita'));
+                const telDisplay = b.telefono ? escapeHtml(b.telefono) : '<span style="color:var(--text-muted);font-size:11px;">-</span>';
+                
+                return `
+                    <tr>
+                        <td style="font-weight:800;color:var(--primary-blue);white-space:nowrap;">${diaStr} ${mesNom.substring(0, 3)}</td>
+                        <td><strong>${escapeHtml(b.nombre)}</strong></td>
+                        <td><span class="category-tag ${catClass}">${escapeHtml(b.categoria || 'Hermano/a')}</span></td>
+                        <td><span style="color:var(--text-secondary);font-size:12px;">${escapeHtml(b.nota || '-')}</span></td>
+                        <td>${telDisplay}</td>
+                        <td style="text-align:center;white-space:nowrap;">
+                            <button type="button" class="btn-row-edit" onclick="openWhatsappForMember('${escapeHtml(b.nombre)}', '${escapeHtml(b.telefono || '')}', '${escapeHtml(b.nota || '')}', '${b.dia}', '${escapeHtml(b.mes)}')" title="Felicitar por WhatsApp">💬</button>
+                            <button type="button" class="btn-row-edit" onclick="openEditCumpleModal('${escapeHtml(b.id)}')" title="Editar datos">✏️</button>
+                            <button type="button" class="btn-row-unmark" onclick="deleteCumpleanosRecord('${escapeHtml(b.id)}', '${escapeHtml(b.nombre)}')" title="Eliminar registro">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function openNewCumpleModal() {
+            document.getElementById('editCumpleModalTitle').textContent = '🎂 Agregar Nuevo Cumpleaños';
+            document.getElementById('editCumpleId').value = '';
+            document.getElementById('editCumpleNombre').value = '';
+            document.getElementById('editCumpleDia').value = (new Date()).getDate();
+            document.getElementById('editCumpleMesNum').value = (new Date()).getMonth() + 1;
+            document.getElementById('editCumpleNota').value = '';
+            document.getElementById('editCumpleTelefono').value = '';
+
+            await populateMembersSelectForBirthday('');
+            document.getElementById('modalEditCumpleanos').style.display = 'flex';
+            setTimeout(() => document.getElementById('editCumpleNombre').focus(), 100);
+        }
+
+        async function openEditCumpleModal(cId) {
+            const item = allBirthdaysList.find(b => b.id === cId);
+            if (!item) return;
+
+            document.getElementById('editCumpleModalTitle').textContent = '✏️ Modificar Cumpleaños';
+            document.getElementById('editCumpleId').value = item.id;
+            document.getElementById('editCumpleNombre').value = item.nombre || '';
+            document.getElementById('editCumpleDia').value = item.dia || 1;
+            document.getElementById('editCumpleMesNum').value = item.mes_num || 1;
+            document.getElementById('editCumpleNota').value = item.nota || '';
+            document.getElementById('editCumpleTelefono').value = item.telefono || '';
+
+            await populateMembersSelectForBirthday(item.member_id || '');
+            document.getElementById('modalEditCumpleanos').style.display = 'flex';
+        }
+
+        function closeEditCumpleModal() {
+            document.getElementById('modalEditCumpleanos').style.display = 'none';
+        }
+
+        async function populateMembersSelectForBirthday(selectedMid = '') {
+            const sel = document.getElementById('editCumpleMemberId');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">(Sin enlazar / Feligrés externo)</option>';
+
+            try {
+                const res = await fetch('/api/members/search?q=a&include_inactive=false');
+                const members = await res.json();
+                if (Array.isArray(members)) {
+                    members.sort((a, b) => (a.nombre + a.apellidos).localeCompare(b.nombre + b.apellidos));
+                    members.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.textContent = `${m.nombre} ${m.apellidos} (${m.categoria || 'Hermano'}) [ID ${m.id}]`;
+                        if (m.id === selectedMid) opt.selected = true;
+                        sel.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.warn('Error cargando miembros para select:', e);
+            }
+        }
+
+        async function saveCumpleanosRecord() {
+            const id = document.getElementById('editCumpleId').value.trim();
+            const nombre = document.getElementById('editCumpleNombre').value.trim();
+            const dia = parseInt(document.getElementById('editCumpleDia').value, 10) || 0;
+            const mesNum = parseInt(document.getElementById('editCumpleMesNum').value, 10) || 0;
+            const nota = document.getElementById('editCumpleNota').value.trim();
+            const telefono = document.getElementById('editCumpleTelefono').value.trim();
+            const memberId = document.getElementById('editCumpleMemberId').value.trim();
+
+            if (!nombre) {
+                alert('Escribe el nombre completo del cumpleañero');
+                return;
+            }
+            if (dia < 1 || dia > 31) {
+                alert('Ingresa un día válido (1 al 31)');
+                return;
+            }
+            if (mesNum < 1 || mesNum > 12) {
+                alert('Selecciona un mes válido');
+                return;
+            }
+
+            const payload = {
+                nombre: nombre,
+                dia: dia,
+                mes_num: mesNum,
+                nota: nota,
+                telefono: telefono,
+                member_id: memberId
+            };
+
+            const isEdit = !!id;
+            if (isEdit) payload.id = id;
+
+            const endpoint = isEdit ? '/api/cumpleanos/update' : '/api/cumpleanos/add';
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    closeEditCumpleModal();
+                    await loadAllBirthdaysData();
+                    await loadBirthdayAlerts(activeDate);
+                    renderMonthPills();
+                    renderSelectedMonthBirthdays();
+                    filterDirectorioTable();
+                    alert(`✅ Cumpleaños ${isEdit ? 'actualizado' : 'registrado'} con éxito.`);
+                } else {
+                    alert(data.error || 'Error al guardar cumpleaños');
+                }
+            } catch (e) {
+                alert('Error al conectar con el servidor para guardar cumpleaños.');
+            }
+        }
+
+        async function deleteCumpleanosRecord(cId, name) {
+            if (!confirm(`¿Estás seguro de que deseas eliminar el registro de cumpleaños de "${name}"?`)) return;
+            try {
+                const res = await fetch('/api/cumpleanos/delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id: cId })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    await loadAllBirthdaysData();
+                    await loadBirthdayAlerts(activeDate);
+                    renderMonthPills();
+                    renderSelectedMonthBirthdays();
+                    filterDirectorioTable();
+                } else {
+                    alert(data.error || 'Error al eliminar cumpleaños');
+                }
+            } catch (e) {
+                alert('Error al eliminar registro de cumpleaños.');
+            }
+        }
+
+        // WhatsApp Greeting Generator
+        // Normaliza el teléfono al formato internacional (requerido por WhatsApp).
+        // Los números locales de 9 dígitos (España) reciben el prefijo 34.
+        function normalizeWaPhone(raw) {
+            let digits = String(raw || '').replace(/[^0-9]/g, '');
+            if (!digits) return '';
+            if (digits.startsWith('00')) digits = digits.slice(2);
+            if (digits.length === 9 && !digits.startsWith('34')) digits = '34' + digits;
+            return digits;
+        }
+
+        function openWhatsappForNextBirthday() {
+            if (!birthdayAlertsData) {
+                openCumpleanosModal('culto');
+                return;
+            }
+            const hoy = birthdayAlertsData.hoy || [];
+            const prox = birthdayAlertsData.proximos || [];
+            const rec = birthdayAlertsData.recientes || [];
+            const person = hoy[0] || prox[0] || rec[0];
+            if (!person) {
+                alert('No hay cumpleaños próximos registrados.');
+                return;
+            }
+            openWhatsappForMember(
+                person.nombre || '',
+                person.telefono || '',
+                person.nota || '',
+                person.dia || '',
+                person.mes || ''
+            );
+        }
+
+        function openWhatsappForMember(name, phone, note = '', dia = '', mes = '') {
+            const normalized = normalizeWaPhone(phone);
+            activeWaData = {
+                name: name || 'Hermano/a',
+                phone: normalized,
+                note: note || '',
+                dia: dia || '',
+                mes: mes || '',
+                tpl: 1
+            };
+
+            document.getElementById('waRecipientName').textContent = activeWaData.name;
+            document.getElementById('waRecipientPhone').value = normalized ? ('+' + normalized) : '';
+            selectWaCategory('pastoral');
+            document.getElementById('modalWhatsappGreeting').style.display = 'flex';
+        }
+
+        function closeWhatsappModal() {
+            document.getElementById('modalWhatsappGreeting').style.display = 'none';
+        }
+
+        // Biblioteca de mensajes (cada uno con versículos distintos, doctrina unicitaria)
+        const WA_TEMPLATES = {
+            pastoral: [
+                (n, f) => `¡Paz de Cristo, querido/a ${n}! 🎂🎉${f}\n\nEn el nombre de nuestro Señor Jesucristo, la Iglesia Pentecostal Unida en Europa - Granada y el equipo de ujieres te deseamos un día pleno de la presencia de Dios y gozo en el Espíritu Santo.\n\n«Escucha, Israel: Jehová nuestro Dios, Jehová uno es.» (Deuteronomio 6:4)\n\nQue el único Dios verdadero, que se manifestó en carne y nos salvó por medio de Jesucristo, te bendiga y te guarde.\n\n«El Señor te bendiga y te guarde; el Señor haga resplandecer su rostro sobre ti y tenga de ti misericordia; el Señor alce sobre ti su rostro y ponga en ti paz.» (Números 6:24-26)\n\n¡Feliz Cumpleaños! 🙏✨`,
+                (n, f) => `¡Dios te bendiga en tu cumpleaños, ${n}! 🎉🕊️${f}\n\nOramos para que el único Dios verdadero derrame su favor sobre tu vida y tu casa en este nuevo año.\n\n«Yo soy Jehová, y no hay otro; fuera de mí no hay Dios.» (Isaías 45:5)\n\n«Jehová es mi pastor; nada me faltará. En lugares de delicados pastos me hará descansar.» (Salmos 23:1-2)\n\nQue la paz de Dios guarde tu corazón. ¡Feliz día! 🙏`,
+                (n, f) => `¡Paz de Cristo, ${n}! 🎂✨${f}\n\nCelebramos con gozo un año más de vida que el Señor te concede. Que su presencia te acompañe en cada paso.\n\n«Porque en él habita corporalmente toda la plenitud de la Deidad.» (Colosenses 2:9)\n\n«Jehová te guardará de todo mal; él guardará tu alma. Jehová guardará tu salida y tu entrada desde ahora y para siempre.» (Salmos 121:7-8)\n\nUn abrazo fraternal del equipo de ujieres de IPUE Granada. ¡Feliz cumpleaños! ❤️`,
+                (n, f) => `¡Querido/a ${n}, muchas bendiciones en tu día! 🎈${f}\n\nQue el Dios único y verdadero, grande en misericordia, te conceda un año de salud, paz y crecimiento espiritual.\n\n«E indiscutiblemente, grande es el misterio de la piedad: Dios fue manifestado en carne...» (1 Timoteo 3:16)\n\n«Y la paz de Dios, que sobrepasa todo entendimiento, guardará vuestros corazones y vuestros pensamientos en Cristo Jesús.» (Filipenses 4:7)\n\n¡Feliz Cumpleaños de parte de toda la congregación! 🙏🎉`
+            ],
+            fraternal: [
+                (n, f) => `¡Bendiciones en tu día, ${n}! 🎈🎁${f}\n\nDamos gracias al Señor por un año más de vida, salud y victorias. Tu vida es de gran gozo y edificación para nuestra congregación en Granada.\n\n«Grandes cosas ha hecho Jehová con nosotros, y estamos alegres.» (Salmos 126:3)\n\n«Te dé conforme al deseo de tu corazón, y cumpla todo tu consejo.» (Salmos 20:4)\n\n¡Celebramos tu vida con aprecio fraternal en el nombre del Señor! ❤️🎂`,
+                (n, f) => `¡Feliz cumpleaños, ${n}! 🎂💛${f}\n\nTu vida es un regalo de Dios para todos nosotros. Que su amor y fidelidad te sigan todos los días.\n\n«Por la misericordia de Jehová no hemos sido consumidos, porque nunca decayeron sus misericordias. Nuevas son cada mañana.» (Lamentaciones 3:22-23)\n\n«Dad gracias en todo, porque esta es la voluntad de Dios para con vosotros en Cristo Jesús.» (1 Tesalonicenses 5:18)\n\n¡Te apreciamos mucho! Un abrazo fraternal. 🤗`,
+                (n, f) => `¡Paz y bendiciones, ${n}! 🎉🎈${f}\n\nNos alegramos contigo en este día tan especial y damos gracias a Dios por tu vida entre nosotros.\n\n«Bendice, alma mía, a Jehová, y no olvides ninguno de sus beneficios. Él perdona todas tus iniquidades y sana todas tus dolencias.» (Salmos 103:2-3)\n\n«Entrad por sus puertas con acción de gracias, y por sus atrios con alabanza.» (Salmos 100:4)\n\n¡Muchas felicidades de parte de tu familia en la fe! 🎂❤️`,
+                (n, f) => `¡Feliz cumpleaños, querido/a ${n}! 🥳🎂${f}\n\nQue el Señor dirija tus pasos y te dé sabiduría en este nuevo año de vida.\n\n«Fíate de Jehová de todo tu corazón, y no te apoyes en tu propia prudencia.» (Proverbios 3:5)\n\n«Este es el día que hizo Jehová; nos gozaremos y alegraremos en él.» (Salmos 118:24)\n\n¡Dios te bendiga abundantemente! Con cariño, IPUE Granada. 🕊️`
+            ],
+            fortaleza: [
+                (n, f) => `¡Dios te bendiga, ${n}! ✨🎂${f}\n\nEn este nuevo año de vida oramos que el Señor te fortalezca y te sostenga en su verdad, sirviendo al único Dios verdadero con todo tu corazón.\n\n«Porque yo sé los pensamientos que tengo acerca de vosotros, dice Jehová, pensamientos de paz, y no de mal, para daros el fin que esperáis.» (Jeremías 29:11)\n\n«Todo lo puedo en Cristo que me fortalece.» (Filipenses 4:13)\n\n«Y hasta la vejez yo mismo, y hasta las canas os soportaré yo; yo hice, yo llevaré, yo soportaré y guardaré.» (Isaías 46:4)\n\n¡Feliz cumpleaños, y que el único Dios te guarde! 🙏`,
+                (n, f) => `¡Paz de Cristo, ${n}! 💪🕊️${f}\n\nQue el Señor te dé ánimo y valor para este nuevo año. No estás solo/a: el Dios que te llamó es fiel.\n\n«Mira que te mando que te esfuerces y seas valiente; no temas ni desmayes, porque Jehová tu Dios estará contigo dondequiera que vayas.» (Josué 1:9)\n\n«No temas, porque yo estoy contigo; no desmayes, porque yo soy tu Dios que te esfuerzo.» (Isaías 41:10)\n\n¡Feliz cumpleaños! Confiamos en que Dios obrará en tu vida. 🙏`,
+                (n, f) => `¡Muchas bendiciones, ${n}! 🎂⚓${f}\n\nOramos para que en este nuevo año veas la mano de Dios obrando a tu favor en cada situación.\n\n«Y sabemos que a los que aman a Dios, todas las cosas les ayudan a bien.» (Romanos 8:28)\n\n«Dios es nuestro amparo y fortaleza, nuestro pronto auxilio en las tribulaciones.» (Salmos 46:1)\n\nQue tengas un día lleno de gozo y esperanza. ¡Feliz cumpleaños! ✨`,
+                (n, f) => `¡Feliz cumpleaños, ${n}! 🎉🙏${f}\n\nQue este nuevo año de vida sea de crecimiento, fe y victorias en el Señor.\n\n«De modo que si alguno está en Cristo, nueva criatura es; las cosas viejas pasaron; he aquí todas son hechas nuevas.» (2 Corintios 5:17)\n\n«Jehová es mi luz y mi salvación; ¿de quién temeré?» (Salmos 27:1)\n\n¡Adelante, que el único Dios pelea por ti! Un abrazo fraternal. 💪`
+            ],
+            invitacion: [
+                (n, f) => `¡Paz de Cristo, ${n}! 🎉🎂${f}\n\n¡Qué bendición celebrar un año más de vida! Te esperamos con los brazos abiertos en nuestro próximo culto en IPUE Granada para dar gracias a Dios juntos.\n\n«Y en ningún otro hay salvación; porque no hay otro nombre bajo el cielo, dado a los hombres, en que podamos ser salvos.» (Hechos 4:12)\n\n«Jesucristo es el mismo ayer, y hoy, y por los siglos.» (Hebreos 13:8)\n\n«Yo, yo Jehová, y fuera de mí no hay quien salve.» (Isaías 43:11)\n\n¡Te esperamos! Un abrazo fraternal en el Señor. ⛪✨`,
+                (n, f) => `¡Feliz cumpleaños, ${n}! 🎂⛪${f}\n\nCelebramos tu vida y te invitamos a dar gracias a Dios con nosotros en el próximo culto.\n\n«Pedro les dijo: Arrepentíos, y bautícese cada uno de vosotros en el nombre de Jesucristo para perdón de los pecados; y recibiréis el don del Espíritu Santo.» (Hechos 2:38)\n\n«Yo y el Padre uno somos.» (Juan 10:30)\n\n¡Te esperamos con gozo! IPUE Granada. 🙏`,
+                (n, f) => `¡Muchas felicidades, ${n}! 🎈🎉${f}\n\nQué alegría poder celebrar contigo. Te esperamos en la casa de Dios para adorar juntos al único y sabio Dios.\n\n«Yo me alegré con los que me decían: A la casa de Jehová iremos.» (Salmos 122:1)\n\n«No dejando de congregarnos, como algunos tienen por costumbre, sino exhortándonos.» (Hebreos 10:25)\n\n¡Feliz cumpleaños y te esperamos el próximo culto! ⛪❤️`,
+                (n, f) => `¡Paz de Cristo, ${n}! 🎂✨${f}\n\nEn tu día te recordamos con cariño y te invitamos a seguir creciendo en la fe y el conocimiento de nuestro Señor.\n\n«Por lo cual Dios también le exaltó hasta lo sumo, y le dio un nombre que es sobre todo nombre; para que en el nombre de Jesús se doble toda rodilla.» (Filipenses 2:9-10)\n\n«Yo soy el Alfa y la Omega, dice el Señor, el que es y que era y que ha de venir, el Todopoderoso.» (Apocalipsis 1:8)\n\n¡Feliz cumpleaños! Te esperamos en el culto. 🙌`
+            ],
+            gozo: [
+                (n, f) => `¡Feliz cumpleaños, ${n}! 🥳🎉${f}\n\nQue este día esté lleno de gozo y gratitud al Señor. ¡Nos alegramos contigo!\n\n«Este es el día que hizo Jehová; nos gozaremos y alegraremos en él.» (Salmos 118:24)\n\n«El gozo de Jehová es vuestra fuerza.» (Nehemías 8:10)\n\n¡Que el gozo del Señor llene tu corazón! 🎂✨`,
+                (n, f) => `¡Bendiciones en tu día, ${n}! 🎈🎊${f}\n\nDamos gracias a Dios por tu vida y pedimos que su presencia te llene de alegría.\n\n«En tu presencia hay plenitud de gozo; delicias a tu diestra para siempre.» (Salmos 16:11)\n\n«El corazón alegre constituye buen remedio.» (Proverbios 17:22)\n\n¡Disfruta tu día rodeado/a de amor y fe! ❤️🎂`,
+                (n, f) => `¡Paz y alegría, ${n}! 🎂🎈${f}\n\nQue el Señor se goce sobre ti y te renueve con su amor.\n\n«Jehová está en medio de ti, poderoso, él salvará; se gozará sobre ti con alegría, callará de amor, se regocijará sobre ti con cánticos.» (Sofonías 3:17)\n\n«Jehová es mi fortaleza y mi escudo; en él confió mi corazón, y fui ayudado.» (Salmos 28:7)\n\n¡Muchas felicidades de parte de la congregación! 🎉🙌`,
+                (n, f) => `¡Feliz cumpleaños, ${n}! 🎉🌿${f}\n\nQue la creación y tu corazón celebren al Dios que te dio la vida.\n\n«Porque con alegría saldréis, y con paz seréis vueltos; los montes y los collados levantarán canción delante de vosotros.» (Isaías 55:12)\n\n«Todo lo que respira alabe a JAH. Aleluya.» (Salmos 150:6)\n\n¡Que sea un año de gozo y bendición! 🎂✨`
+            ],
+            promesa: [
+                (n, f) => `¡Dios te bendiga, ${n}! 🌟🎂${f}\n\nEn tu cumpleaños declaramos las promesas de Dios sobre tu vida y tu familia.\n\n«Por cuanto en mí ha puesto su amor, yo también lo libraré; lo pondré en alto, por cuanto ha conocido mi nombre.» (Salmos 91:14)\n\n«Deléitate asimismo en Jehová, y él te concederá las peticiones de tu corazón.» (Salmos 37:4)\n\n¡Que se cumplan en ti sus promesas! 🙏✨`,
+                (n, f) => `¡Muchas bendiciones, ${n}! 🎁🎂${f}\n\nOramos para que el Señor te prospere en todo, según su voluntad perfecta.\n\n«Y haré de ti una nación grande, y te bendeciré, y engrandeceré tu nombre, y serás bendición.» (Génesis 12:2)\n\n«Traed todos los diezmos al alfolí... y probadme ahora en esto, dice Jehová de los ejércitos, si no os abriré las ventanas de los cielos, y derramaré sobre vosotros bendición hasta que sobreabunde.» (Malaquías 3:10)\n\n¡Feliz cumpleaños! Confía en sus promesas. 🌈`,
+                (n, f) => `¡Feliz cumpleaños, ${n}! 🙌🎂${f}\n\nQue el Dios que hace infinitamente más de lo que pedimos o entendemos obre en tu nuevo año.\n\n«Y a Aquel que es poderoso para hacer todas las cosas mucho más abundantemente de lo que pedimos o entendemos...» (Efesios 3:20)\n\n«Mi Dios, pues, suplirá todo lo que os falta conforme a sus riquezas en gloria en Cristo Jesús.» (Filipenses 4:19)\n\n¡Dios tiene grandes cosas para ti! ✨🎉`,
+                (n, f) => `¡Paz de Cristo, ${n}! 🕊️🎂${f}\n\nQue el favor del Señor sea sobre ti y tu casa en este nuevo año de vida.\n\n«Porque sol y escudo es Jehová Dios; gracia y gloria dará Jehová. No quitará el bien a los que andan en integridad.» (Salmos 84:11)\n\n«La bendición de Jehová es la que enriquece, y no añade tristeza con ella.» (Proverbios 10:22)\n\n¡Feliz cumpleaños! Un fuerte abrazo fraternal. ❤️🙏`
+            ]
+        };
+
+        let waCurrentCategory = 'pastoral';
+        let waCurrentBaseText = '';
+
+        function waFechaTexto() {
+            return (activeWaData.dia && activeWaData.mes) ? ` (${activeWaData.dia} de ${activeWaData.mes})` : '';
+        }
+
+        function selectWaCategory(cat) {
+            waCurrentCategory = WA_TEMPLATES[cat] ? cat : 'pastoral';
+            document.querySelectorAll('#modalWhatsappGreeting .wa-chip').forEach(ch => {
+                ch.classList.toggle('active', ch.dataset.cat === waCurrentCategory);
+            });
+            applyRandomWaTemplate(waCurrentCategory, waCurrentBaseText);
+        }
+
+        function applyRandomWaTemplate(cat, avoidText) {
+            const list = (WA_TEMPLATES[cat] || WA_TEMPLATES.pastoral);
+            const name = activeWaData.name || 'Hermano/a';
+            const f = waFechaTexto();
+            let candidates = list.map(fn => fn(name, f));
+            if (avoidText && candidates.length > 1) {
+                const filtered = candidates.filter(t => t !== avoidText);
+                if (filtered.length > 0) candidates = filtered;
+            }
+            const text = candidates[Math.floor(Math.random() * candidates.length)];
+            waCurrentBaseText = text;
+            const ta = document.getElementById('waMessageText');
+            if (ta) ta.value = text;
+            updateWaCharCount();
+            updateWaOptionsLabel(cat);
+        }
+
+        function newRandomWaMessage() {
+            applyRandomWaTemplate(waCurrentCategory, waCurrentBaseText);
+        }
+
+        function restoreWaMessage() {
+            const ta = document.getElementById('waMessageText');
+            if (ta) {
+                ta.value = waCurrentBaseText;
+                updateWaCharCount();
+            }
+        }
+
+        function updateWaOptionsLabel(cat) {
+            const el = document.getElementById('waOptionsLabel');
+            if (!el) return;
+            const total = (WA_TEMPLATES[cat] || []).length;
+            el.textContent = `🎲 ${total} mensajes en esta categoría · toca "Otro mensaje" si no te gusta`;
+        }
+
+        function updateWaCharCount() {
+            const t = document.getElementById('waMessageText');
+            const c = document.getElementById('waCharCount');
+            if (t && c) c.textContent = `${t.value.length} caracteres`;
+        }
+
+        function launchWhatsappDirect() {
+            const phone = normalizeWaPhone(document.getElementById('waRecipientPhone').value);
+            const msg = document.getElementById('waMessageText').value.trim();
+
+            if (!phone || phone.length < 10) {
+                alert('Ingresa un número de WhatsApp válido en formato internacional.\n\nEjemplo: +34 600 000 000\n\nSi escribes solo los 9 dígitos, se añade +34 automáticamente.');
+                document.getElementById('waRecipientPhone').focus();
+                return;
+            }
+
+            const text = encodeURIComponent(msg);
+            const isMobile = /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent);
+            const webUrl = `https://wa.me/${phone}?text=${text}`;
+            const appScheme = `whatsapp://send?phone=${phone}&text=${text}`;
+
+            closeWhatsappModal();
+
+            // Lanza el enlace como un clic real (los bloqueadores de pop-ups lo permiten).
+            const open = (href, target) => {
+                const a = document.createElement('a');
+                a.href = href;
+                if (target) { a.target = target; a.rel = 'noopener'; }
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            };
+
+            if (isMobile) {
+                // 1) Intenta abrir la app de WhatsApp instalada.
+                open(appScheme);
+                // 2) Si la app no está instalada (la página sigue visible), usa wa.me.
+                setTimeout(() => {
+                    if (document.visibilityState === 'visible') {
+                        window.location.href = webUrl;
+                    }
+                }, 1200);
+            } else {
+                // Escritorio: WhatsApp Web / app de escritorio.
+                open(webUrl, '_blank');
+            }
+        }
+
+        function renderPrintPreview() {
+            const container = document.getElementById('printPreviewContainer');
+            const selMonth = document.getElementById('selectPrintMonth')?.value || '';
+
+            if (!container) return;
+
+            let list = [...allBirthdaysList];
+            let headerText = 'Calendario Anual Completo';
+
+            if (selMonth) {
+                const mIdx = parseInt(selMonth, 10);
+                list = list.filter(b => parseInt(b.mes_num, 10) === mIdx);
+                headerText = `Mes de ${MESES_NOMBRES[mIdx - 1]}`;
+            }
+
+            list.sort((a, b) => {
+                if (parseInt(a.mes_num, 10) !== parseInt(b.mes_num, 10)) {
+                    return parseInt(a.mes_num, 10) - parseInt(b.mes_num, 10);
+                }
+                return parseInt(a.dia, 10) - parseInt(b.dia, 10);
+            });
+
+            container.innerHTML = `
+                <div class="print-paper">
+                    <div class="print-header-brand">
+                        <img src="/static/logo_ipue.jpeg" onerror="this.src='/api/logo'" alt="Logo IPUE" class="print-logo">
+                        <div>
+                            <h1 style="font-size:18px;font-weight:800;color:#002654;margin:0;">IGLESIA PENTECOSTAL UNIDA EN EUROPA - GRANADA</h1>
+                            <h2 style="font-size:14px;font-weight:700;color:#b45309;margin:3px 0 0 0;">BOLETÍN OFICIAL DE CUMPLEAÑOS — ${headerText.toUpperCase()}</h2>
+                            <div style="font-size:11px;color:#64748b;margin-top:2px;">Generado el ${nowLocalDateString()} · Total feligreses registrados: ${list.length}</div>
+                        </div>
+                    </div>
+                    <hr style="border:none;border-top:2px solid #004085;margin:12px 0 16px 0;">
+                    <div class="print-grid">
+                        ${list.map(b => {
+                            const diaStr = String(b.dia).padStart(2, '0');
+                            const mesNom = b.mes || MESES_NOMBRES[(parseInt(b.mes_num, 10) || 1) - 1];
+                            return `
+                                <div class="print-item-card">
+                                    <div class="print-item-day">${diaStr} ${mesNom.substring(0, 3)}</div>
+                                    <div class="print-item-info">
+                                        <div class="print-item-name">${escapeHtml(b.nombre)}</div>
+                                        ${b.nota ? `<div class="print-item-sub">${escapeHtml(b.nota)}</div>` : ''}
+                                        <div class="print-item-cat">${escapeHtml(b.categoria || 'Hermano/a')}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="print-footer-verse">
+                        «Jehová te bendiga, y te guarde; Jehová haga resplandecer su rostro sobre ti, y tenga de ti misericordia» — Números 6:24-25
+                    </div>
+                </div>
+            `;
+        }
+
+        function nowLocalDateString() {
+            const d = new Date();
+            return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+        function downloadCumpleCSV() {
+            const selMonth = document.getElementById('selectPrintMonth')?.value || '';
+            let url = '/api/cumpleanos/export-csv';
+            if (selMonth) url += `?mes=${encodeURIComponent(selMonth)}`;
+            window.open(url, '_blank');
+        }
+
+        function printCumpleBulletin() {
+            const content = document.getElementById('printPreviewContainer')?.innerHTML;
+            if (!content) return;
+
+            const printWin = window.open('', '_blank', 'width=850,height=900');
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Boletín de Cumpleaños - IPUE Granada</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 24px; color: #0f172a; margin: 0; background: #ffffff; }
+                        .print-paper { max-width: 800px; margin: 0 auto; }
+                        .print-header-brand { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+                        .print-logo { width: 60px; height: 60px; object-fit: contain; border-radius: 8px; }
+                        .print-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
+                        .print-item-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; display: flex; gap: 10px; align-items: center; page-break-inside: avoid; }
+                        .print-item-day { font-size: 14px; font-weight: 800; color: #004085; background: #e0f2fe; padding: 4px 6px; border-radius: 4px; min-width: 48px; text-align: center; }
+                        .print-item-name { font-size: 12px; font-weight: 700; color: #0f172a; }
+                        .print-item-sub { font-size: 10px; color: #64748b; font-style: italic; }
+                        .print-item-cat { font-size: 10px; color: #0284c7; font-weight: 600; }
+                        .print-footer-verse { text-align: center; font-size: 11px; font-style: italic; color: #475569; margin-top: 24px; padding-top: 12px; border-top: 1px dashed #cbd5e1; }
+                        @media print {
+                            @page { margin: 15mm; size: A4; }
+                        }
+                    </style>
+                </head>
+                <body onload="window.print(); setTimeout(() => window.close(), 500);">
+                    ${content}
+
+    <!-- MOTOR DE ANIMACIONES DE CUMPLEAÑOS (CONFETI, SERPENTINAS Y GLOBOS) -->
+    <canvas id="birthdayCelebrationCanvas"></canvas>
+    <div id="birthdayBalloonsContainer"></div>
+
+</body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+    
+        // =========================================================
+        // MOTOR DE ANIMACIÓN FESTIVA: CONFETI, SERPENTINAS Y GLOBOS
+        // =========================================================
+        const BirthdayCelebrationEngine = (function() {
+            let canvas = null;
+            let ctx = null;
+            let particles = [];
+            let animId = null;
+            let audioCtx = null;
+
+            const COLORS = [
+                '#F59E0B', '#EF4444', '#3B82F6', '#10B981',
+                '#EC4899', '#8B5CF6', '#FBBF24', '#06B6D4', '#F43F5E'
+            ];
+
+            function initCanvas() {
+                canvas = document.getElementById('birthdayCelebrationCanvas');
+                if (!canvas) return;
+                ctx = canvas.getContext('2d');
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+            }
+
+            function resizeCanvas() {
+                if (!canvas) return;
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            function playSynthPopSound() {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) return;
+                    if (!audioCtx) audioCtx = new AudioContext();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    // Pitch bend rápido simulando estallido "POP"
+                    osc.type = 'sine';
+                    const now = audioCtx.currentTime;
+                    osc.frequency.setValueAtTime(600 + Math.random() * 200, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.12);
+
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.13);
+                } catch(e) {
+                    // Audio context no disponible o bloqueado por navegador
+                }
+            }
+
+            function triggerConfettiBurst(opts = {}) {
+                if (!canvas) initCanvas();
+                if (!canvas || !ctx) return;
+
+                const originX = opts.x !== undefined ? opts.x : window.innerWidth / 2;
+                const originY = opts.y !== undefined ? opts.y : window.innerHeight * 0.4;
+                const count = opts.count || 90;
+                const withRibbons = opts.ribbons !== undefined ? opts.ribbons : true;
+
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 4 + Math.random() * 12;
+                    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                    const isRibbon = withRibbons && Math.random() < 0.28;
+
+                    particles.push({
+                        x: originX,
+                        y: originY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - (Math.random() * 6 + 2),
+                        color: color,
+                        size: isRibbon ? (Math.random() * 8 + 12) : (Math.random() * 6 + 5),
+                        width: isRibbon ? (Math.random() * 4 + 3) : (Math.random() * 6 + 5),
+                        isRibbon: isRibbon,
+                        rotation: Math.random() * 360,
+                        rotSpeed: (Math.random() - 0.5) * 12,
+                        gravity: 0.18 + Math.random() * 0.12,
+                        drag: 0.98,
+                        wobble: Math.random() * 10,
+                        wobbleSpeed: 0.08 + Math.random() * 0.06,
+                        opacity: 1,
+                        decay: 0.005 + Math.random() * 0.006
+                    });
+                }
+
+                if (!animId) {
+                    animId = requestAnimationFrame(renderLoop);
+                }
+            }
+
+            function renderLoop() {
+                if (!ctx || !canvas) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += p.gravity;
+                    p.vx *= p.drag;
+                    p.vy *= p.drag;
+                    p.rotation += p.rotSpeed;
+                    p.wobble += p.wobbleSpeed;
+                    p.opacity -= p.decay;
+
+                    if (p.opacity <= 0 || p.y > canvas.height + 50) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, p.opacity);
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+
+                    ctx.fillStyle = p.color;
+
+                    if (p.isRibbon) {
+                        // Serpentina / cinta ondulante
+                        const wave = Math.sin(p.wobble) * 6;
+                        ctx.beginPath();
+                        ctx.moveTo(-p.width / 2, -p.size / 2);
+                        ctx.quadraticCurveTo(wave, 0, p.width / 2, p.size / 2);
+                        ctx.lineTo(-p.width / 2, p.size / 2);
+                        ctx.closePath();
+                        ctx.fill();
+                    } else {
+                        // Confeti rectangular / estrella
+                        ctx.fillRect(-p.width / 2, -p.size / 2, p.width, p.size);
+                    }
+                    ctx.restore();
+                }
+
+                if (particles.length > 0) {
+                    animId = requestAnimationFrame(renderLoop);
+                } else {
+                    animId = null;
+                }
+            }
+
+            // LANZAMIENTO DE GLOBOS INTERACTIVOS QUE ESTALLAN
+            function spawnBalloons(count = 7) {
+                const container = document.getElementById('birthdayBalloonsContainer');
+                if (!container) return;
+
+                const balloonColors = [
+                    'balloon-red', 'balloon-gold', 'balloon-blue',
+                    'balloon-green', 'balloon-purple', 'balloon-pink', 'balloon-cyan'
+                ];
+
+                const screenW = window.innerWidth;
+
+                for (let i = 0; i < count; i++) {
+                    const balloon = document.createElement('div');
+                    const colorClass = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+                    balloon.className = `birthday-balloon ${colorClass}`;
+
+                    const leftPos = Math.random() * (screenW - 80) + 40;
+                    const duration = 6 + Math.random() * 5; // 6s a 11s
+                    const delay = Math.random() * 2.5;
+
+                    balloon.style.left = `${leftPos}px`;
+                    balloon.style.animationDuration = `${duration}s`;
+                    balloon.style.animationDelay = `${delay}s`;
+                    balloon.style.transform = `scale(${0.85 + Math.random() * 0.4})`;
+
+                    // Evento al hacer clic o tocar: ESTALLA EL GLOBO
+                    balloon.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        popBalloon(balloon, e.clientX, e.clientY);
+                    });
+                    balloon.addEventListener('touchstart', function(e) {
+                        e.stopPropagation();
+                        const touch = e.touches[0];
+                        if (touch) popBalloon(balloon, touch.clientX, touch.clientY);
+                    }, { passive: true });
+
+                    container.appendChild(balloon);
+
+                    // Eliminar automáticamente al terminar la animación
+                    setTimeout(() => {
+                        if (balloon.parentNode) balloon.parentNode.removeChild(balloon);
+                    }, (duration + delay + 1) * 1000);
+                }
+            }
+
+            function popBalloon(balloonEl, clientX, clientY) {
+                if (!balloonEl || !balloonEl.parentNode) return;
+
+                const rect = balloonEl.getBoundingClientRect();
+                const x = clientX || (rect.left + rect.width / 2);
+                const y = clientY || (rect.top + rect.height / 2);
+
+                // 1. Sonido sintético POP
+                playSynthPopSound();
+
+                // 2. Texto "💥 ¡POP!" animado
+                const popText = document.createElement('div');
+                popText.className = 'balloon-pop-text';
+                popText.textContent = '💥 ¡POP!';
+                popText.style.left = `${x}px`;
+                popText.style.top = `${y}px`;
+                document.body.appendChild(popText);
+                setTimeout(() => {
+                    if (popText.parentNode) popText.parentNode.removeChild(popText);
+                }, 700);
+
+                // 3. Estallido de confeti y chispas desde el punto de estallido
+                triggerConfettiBurst({
+                    x: x,
+                    y: y,
+                    count: 35,
+                    ribbons: true
+                });
+
+                // 4. Remover globo de inmediato
+                balloonEl.parentNode.removeChild(balloonEl);
+            }
+
+            function celebrateBirthdayNow() {
+                // Cañón doble de confeti izquierda y derecha
+                triggerConfettiBurst({ x: window.innerWidth * 0.2, y: window.innerHeight * 0.3, count: 60, ribbons: true });
+                setTimeout(() => {
+                    triggerConfettiBurst({ x: window.innerWidth * 0.8, y: window.innerHeight * 0.3, count: 60, ribbons: true });
+                }, 250);
+                setTimeout(() => {
+                    triggerConfettiBurst({ x: window.innerWidth * 0.5, y: window.innerHeight * 0.2, count: 80, ribbons: true });
+                }, 500);
+
+                // Lanzar globos flotantes
+                spawnBalloons(8);
+            }
+
+            return {
+                init: initCanvas,
+                confetti: triggerConfettiBurst,
+                balloons: spawnBalloons,
+                pop: popBalloon,
+                celebrate: celebrateBirthdayNow
+            };
+        })();
+
+        
+    function switchMobileTab(tabName) {
+        if (window.innerWidth > 768) {
+            // Desktop behavior
+            if (tabName === 'asistencia') scrollToSearch();
+            if (tabName === 'agregar') openNewMemberModal();
+            if (tabName === 'cumpleanos') openCumpleanosModal();
+            if (tabName === 'reportes') openAnalyticsModal();
+            return;
+        }
+        
+        // Mobile behavior: Switch Tab
+        closeMobileSearchMode();
+        document.body.setAttribute('data-active-tab', tabName);
+        
+        // Update nav active classes
+        document.querySelectorAll('.mobile-nav-item').forEach(btn => btn.classList.remove('active'));
+        // Find the button that called this
+        const buttons = document.querySelectorAll('.mobile-nav-item');
+        if(tabName === 'asistencia') buttons[0].classList.add('active');
+        if(tabName === 'agregar') buttons[1].classList.add('active');
+        if(tabName === 'cumpleanos') buttons[2].classList.add('active');
+        if(tabName === 'reportes') buttons[3].classList.add('active');
+        
+        // Cargar datos de la sección activa (la analítica no se auto-cargaba)
+        if (tabName === 'reportes') {
+            loadPeriodModal(currentModalPeriod);
+            loadFriendsModal();
+        }
+        if (tabName === 'cumpleanos') {
+            if (typeof updateBirthdayBannerAndBadges === 'function') updateBirthdayBannerAndBadges();
+        }
+        
+        // Update birthday badge
+        updateMobileCumpleBadge();
+        
+        // Ensure scroll top
+        window.scrollTo(0,0);
+    }
+    
+    function updateMobileCumpleBadge() {
+        const badge = document.getElementById('mobileCumpleBadge');
+        if (!badge) return;
+        
+        let totalAlerts = 0;
+        if (window.__INITIAL_BIRTHDAY_ALERTS__) {
+            const a = window.__INITIAL_BIRTHDAY_ALERTS__;
+            totalAlerts = (a.hoy ? a.hoy.length : 0) + (a.proximos ? a.proximos.length : 0);
+        }
+        
+        if (totalAlerts > 0) {
+            badge.textContent = totalAlerts;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+    
+    // Call on load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateMobileCumpleBadge();
+    });
+
+
+
+
+    // Inicializar motor de celebración al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+            BirthdayCelebrationEngine.init();
+            setTimeout(() => { BirthdayCelebrationEngine.celebrate(); }, 800);
+        });
+
+</script>
+
+    <!-- BARRA DE NAVEGACIÓN INFERIOR MÓVIL (STITCH) -->
+    <nav class="mobile-bottom-nav">
+        <button type="button" class="mobile-nav-item active" onclick="switchMobileTab('asistencia')">
+            <span class="mobile-nav-icon">📋</span>
+            <span>Asistencia</span>
+        </button>
+        <button type="button" class="mobile-nav-item" onclick="switchMobileTab('agregar')">
+            <span class="mobile-nav-icon">👥</span>
+            <span>Agregar</span>
+        </button>
+        <button type="button" class="mobile-nav-item" onclick="switchMobileTab('cumpleanos')">
+            <span class="mobile-nav-icon">🎂</span>
+            <span>Cumpleaños</span>
+            <span class="mobile-nav-badge" id="mobileCumpleBadge" style="display:none;">0</span>
+        </button>
+        <button type="button" class="mobile-nav-item" onclick="switchMobileTab('reportes')">
+            <span class="mobile-nav-icon">📊</span>
+            <span>Reportes</span>
+        </button>
+    </nav>
+
 </body>
 </html>
