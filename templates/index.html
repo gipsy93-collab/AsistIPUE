@@ -318,22 +318,7 @@
                 <span>+</span> Registrar Asistente Nuevo
             </button>
 
-            <!-- CHIPS DE FILTRADO RÁPIDO POR MINISTERIO -->
-            <div class="ministry-chips-section">
-                <span class="ministry-chips-label">Filtros rápidos por comité & ministerio</span>
-                <div class="ministry-chips-list">
-                    <button type="button" class="ministry-chip active" onclick="filterByMinistry('', this)">Todos</button>
-                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Jóvenes', this)">👥 Jóvenes</button>
-                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Alabanza', this)">🎵 Alabanza</button>
-                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Ujieres', this)">🛡️ Ujieres</button>
-                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Escuela Bíblica', this)">👶 Escuela Bíblica</button>
-                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Damas', this)">🌸 Damas Doradas</button>
-                    <button type="button" class="ministry-chip" onclick="filterByMinistry('Caballeros', this)">👔 Caballeros</button>
-                </div>
-            </div>
-
-            <div class="search-hint">
-                <span>✨ Tolera faltas de ortografía y apodos comunes</span>
+            <div class="search-hint" style="justify-content: flex-end;">
                 <span id="resultsCount" role="status" aria-live="polite"></span>
             </div>
 
