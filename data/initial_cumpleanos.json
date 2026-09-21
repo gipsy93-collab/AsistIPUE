@@ -1701,5 +1701,18 @@
     "member_id": "",
     "member_nombre_completo": "",
     "nota": ""
+  },
+  {
+    "id": "CUMP_132",
+    "mes_num": 10,
+    "mes": "Octubre",
+    "dia": 15,
+    "nombre": "PRUEBA CUMPLE MODIFICADO AUTOMATICA",
+    "categoria": "Amigo",
+    "genero": "Hombre",
+    "telefono": "600123456",
+    "member_id": "V031",
+    "member_nombre_completo": "PRUEBA CUMPLE MODIFICADO AUTOMATICA",
+    "nota": "Año nac: 1995"
   }
 ]

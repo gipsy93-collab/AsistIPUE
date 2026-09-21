@@ -266,9 +266,9 @@ def restore_db_from_sheets(target_db):
 
     try:
         batch = sh.values_batch_get([
-            'Miembros!A1:H',
-            'Visitas!A1:I',
-            'Amigos!A1:I',
+            'Miembros!A1:I',
+            'Visitas!A1:J',
+            'Amigos!A1:J',
             'Asistencia!A1:J',
             'Cultos_Metricas!A1:D',
             'Ujieres!A1:C',
@@ -303,11 +303,12 @@ def restore_db_from_sheets(target_db):
                 'telefono': str(r.get('Telefono', '')).strip(),
                 'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
                 'hora_registro': '',
+                'fecha_nacimiento': str(r.get('Fecha_Nacimiento', '')).strip(),
                 'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo',
                 'total_asistencias': 0
             })
 
-    # 2. Visitas (Hoja Visitas: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias, Estado)
+    # 2. Visitas (Hoja Visitas: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias, Estado, Fecha_Nacimiento)
     v_rows = ranges.get('Visitas', [])
     if len(v_rows) > 1:
         headers = [h.strip() for h in v_rows[0]]
@@ -328,11 +329,12 @@ def restore_db_from_sheets(target_db):
                 'telefono': str(r.get('Telefono', '')).strip(),
                 'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
                 'hora_registro': str(r.get('Hora_Registro', '')).strip(),
+                'fecha_nacimiento': str(r.get('Fecha_Nacimiento', '')).strip(),
                 'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo',
                 'total_asistencias': to_int(r.get('Total_Asistencias', 0))
             })
 
-    # 3. Amigos (Hoja Amigos: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias, Estado)
+    # 3. Amigos (Hoja Amigos: ID, Fecha_Registro, Hora_Registro, Nombre, Apellidos, Telefono, Genero, Total_Asistencias, Estado, Fecha_Nacimiento)
     a_m_rows = ranges.get('Amigos', [])
     if len(a_m_rows) > 1:
         headers = [h.strip() for h in a_m_rows[0]]
@@ -353,6 +355,7 @@ def restore_db_from_sheets(target_db):
                 'telefono': str(r.get('Telefono', '')).strip(),
                 'fecha_registro': str(r.get('Fecha_Registro', '')).strip(),
                 'hora_registro': str(r.get('Hora_Registro', '')).strip(),
+                'fecha_nacimiento': str(r.get('Fecha_Nacimiento', '')).strip(),
                 'estado': str(r.get('Estado', 'Activo')).strip() or 'Activo',
                 'total_asistencias': to_int(r.get('Total_Asistencias', 0))
             })
@@ -574,7 +577,8 @@ def sync_sheets_write_member(m):
                     m.get('telefono', ''),
                     m.get('genero', 'Hombre'),
                     m.get('total_asistencias', 0),
-                    m.get('estado', 'Activo')
+                    m.get('estado', 'Activo'),
+                    m.get('fecha_nacimiento', '')
                 ])
         elif cat == 'Amigo':
             ws = get_or_create_amigos_ws(sh)
@@ -588,7 +592,8 @@ def sync_sheets_write_member(m):
                     m.get('telefono', ''),
                     m.get('genero', 'Hombre'),
                     m.get('total_asistencias', 0),
-                    m.get('estado', 'Activo')
+                    m.get('estado', 'Activo'),
+                    m.get('fecha_nacimiento', '')
                 ])
         else:
             ws = sh.worksheet('Miembros')
@@ -600,7 +605,8 @@ def sync_sheets_write_member(m):
                 m.get('apellidos', ''),
                 m.get('telefono', ''),
                 m.get('fecha_registro', ''),
-                m.get('estado', 'Activo')
+                m.get('estado', 'Activo'),
+                m.get('fecha_nacimiento', '')
             ])
     except Exception as e:
         print(f'Error sync miembro a Sheets: {e}')
@@ -638,9 +644,10 @@ def sync_sheets_update_member(m):
                     m.get('telefono', ''),
                     m.get('genero', 'Hombre'),
                     m.get('total_asistencias', 0),
-                    m.get('estado', 'Activo')
+                    m.get('estado', 'Activo'),
+                    m.get('fecha_nacimiento', '')
                 ]
-                found_ws.update(values=[row_vals], range_name=f'A{found_row}:I{found_row}')
+                found_ws.update(values=[row_vals], range_name=f'A{found_row}:J{found_row}')
             else:
                 row_vals = [
                     m.get('id', ''),
@@ -650,9 +657,10 @@ def sync_sheets_update_member(m):
                     m.get('apellidos', ''),
                     m.get('telefono', ''),
                     m.get('fecha_registro', ''),
-                    m.get('estado', 'Activo')
+                    m.get('estado', 'Activo'),
+                    m.get('fecha_nacimiento', '')
                 ]
-                found_ws.update(values=[row_vals], range_name=f'A{found_row}:H{found_row}')
+                found_ws.update(values=[row_vals], range_name=f'A{found_row}:I{found_row}')
         else:
             if found_ws and found_row:
                 try:
@@ -902,6 +910,99 @@ def sync_sheets_delete_cumpleanos(c_id):
                 break
     except Exception as e:
         print(f'Error sync delete cumpleaños a Sheets: {e}')
+
+def parse_birthdate(val):
+    """Parsea una fecha de nacimiento en formatos YYYY-MM-DD, DD/MM/YYYY o DD/MM."""
+    if not val:
+        return None
+    val = str(val).strip()
+    # 1. YYYY-MM-DD
+    m = re.match(r'^(\d{4})-(\d{1,2})-(\d{1,2})$', val)
+    if m:
+        year, month, day = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if 1 <= month <= 12 and 1 <= day <= 31:
+            return {'year': year, 'month': month, 'day': day, 'formatted': f"{year:04d}-{month:02d}-{day:02d}"}
+    # 2. DD/MM/YYYY o DD-MM-YYYY
+    m = re.match(r'^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$', val)
+    if m:
+        day, month, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if 1 <= month <= 12 and 1 <= day <= 31:
+            return {'year': year, 'month': month, 'day': day, 'formatted': f"{year:04d}-{month:02d}-{day:02d}"}
+    # 3. DD/MM o DD-MM (sin año)
+    m = re.match(r'^(\d{1,2})[/.-](\d{1,2})$', val)
+    if m:
+        day, month = int(m.group(1)), int(m.group(2))
+        if 1 <= month <= 12 and 1 <= day <= 31:
+            return {'year': None, 'month': month, 'day': day, 'formatted': f"{month:02d}-{day:02d}"}
+    return None
+
+def sync_member_birthday(member, birth_info):
+    """Crea o actualiza automáticamente el registro en la lista y hoja de Cumpleaños."""
+    if not birth_info or not member:
+        return
+    day = birth_info['day']
+    month = birth_info['month']
+    if not (1 <= month <= 12 and 1 <= day <= 31):
+        return
+    mes_nombre = MESES_ES[month - 1]
+    mid = str(member.get('id', '')).strip()
+    full_name = f"{member.get('nombre', '')} {member.get('apellidos', '')}".strip()
+    
+    all_cumples = load_cumpleanos_raw()
+    target = None
+    # 1. Buscar por member_id
+    if mid:
+        for c in all_cumples:
+            if c.get('member_id') == mid:
+                target = c
+                break
+    # 2. Buscar por nombre normalizado
+    if not target and full_name:
+        fn_norm = normalize_str(full_name)
+        for c in all_cumples:
+            if normalize_str(c.get('nombre', '')) == fn_norm or normalize_str(c.get('member_nombre_completo', '')) == fn_norm:
+                target = c
+                break
+                
+    year_str = f"Año nac: {birth_info['year']}" if birth_info.get('year') else ''
+    
+    if target:
+        target['mes_num'] = month
+        target['mes'] = mes_nombre
+        target['dia'] = day
+        target['nombre'] = full_name
+        target['categoria'] = member.get('categoria', target.get('categoria', 'Hermano'))
+        target['genero'] = member.get('genero', target.get('genero', 'Hombre'))
+        target['telefono'] = member.get('telefono', target.get('telefono', ''))
+        target['member_id'] = mid
+        target['member_nombre_completo'] = full_name
+        if year_str and not target.get('nota'):
+            target['nota'] = year_str
+        save_cumpleanos(all_cumples)
+        sync_sheets_update_cumpleanos(target)
+    else:
+        existing_nums = []
+        for b in all_cumples:
+            m_id_match = re.search(r'\d+', str(b.get('id', '')))
+            if m_id_match:
+                existing_nums.append(int(m_id_match.group(0)))
+        next_id_num = (max(existing_nums) + 1) if existing_nums else (len(all_cumples) + 1)
+        new_cump = {
+            'id': f"CUMP_{next_id_num:03d}",
+            'mes_num': month,
+            'mes': mes_nombre,
+            'dia': day,
+            'nombre': full_name,
+            'categoria': member.get('categoria', 'Hermano'),
+            'genero': member.get('genero', 'Hombre'),
+            'telefono': member.get('telefono', ''),
+            'member_id': mid,
+            'member_nombre_completo': full_name,
+            'nota': year_str
+        }
+        all_cumples.append(new_cump)
+        save_cumpleanos(all_cumples)
+        sync_sheets_write_cumpleanos(new_cump)
 
 def get_birthday_alerts(ref_date_str=None):
     """Calcula cumpleañeros de hoy, próximos (14 días) y recientes (3 días) según la fecha del culto."""
@@ -1252,10 +1353,26 @@ def api_members_search():
         prox_name_map = {normalize_str(b.get('nombre', '')): b for b in b_alerts.get('proximos', [])}
         rec_name_map = {normalize_str(b.get('nombre', '')): b for b in b_alerts.get('recientes', [])}
 
+        all_cumples = load_cumpleanos_raw()
+        all_cump_id_map = {c.get('member_id'): c for c in all_cumples if c.get('member_id')}
+        all_cump_name_map = {normalize_str(c.get('nombre', '')): c for c in all_cumples}
+
         for r in results:
             mid = r.get('id', '')
             full_n = normalize_str(f"{r.get('nombre', '')} {r.get('apellidos', '')}")
             first_n = normalize_str(r.get('nombre', ''))
+
+            # Localizar registro de cumpleaños correspondiente
+            c_entry = all_cump_id_map.get(mid) or all_cump_name_map.get(full_n) or all_cump_name_map.get(first_n)
+            if c_entry:
+                r['cumpleanos_dia'] = c_entry.get('dia')
+                r['cumpleanos_mes'] = c_entry.get('mes')
+                r['cumpleanos_mes_num'] = c_entry.get('mes_num')
+                if not r.get('fecha_nacimiento'):
+                    nota_c = str(c_entry.get('nota', ''))
+                    m_yr = re.search(r'(\d{4})', nota_c)
+                    if m_yr:
+                        r['fecha_nacimiento'] = f"{m_yr.group(1)}-{int(c_entry.get('mes_num', 1)):02d}-{int(c_entry.get('dia', 1)):02d}"
 
             if mid in hoy_map or full_n in hoy_name_map or first_n in hoy_name_map:
                 info = hoy_map.get(mid) or hoy_name_map.get(full_n) or hoy_name_map.get(first_n)
@@ -1290,6 +1407,15 @@ def api_members_search():
                     'dia': info.get('dia'),
                     'mes': info.get('mes'),
                     'nota': info.get('nota', '')
+                }
+            elif c_entry:
+                r['cumpleanos_info'] = {
+                    'tipo': 'general',
+                    'texto': f"🎂 {c_entry.get('dia')} de {c_entry.get('mes')}",
+                    'etiqueta': f"{c_entry.get('dia')} {str(c_entry.get('mes', ''))[:3]}",
+                    'dia': c_entry.get('dia'),
+                    'mes': c_entry.get('mes'),
+                    'nota': c_entry.get('nota', '')
                 }
             else:
                 r['cumpleanos_info'] = None
@@ -1334,6 +1460,17 @@ def api_members_update():
     if 'estado' in data and data['estado']:
         member['estado'] = data['estado'].strip() # 'Activo' o 'Inactivo'
         
+    if 'fecha_nacimiento' in data:
+        fn_raw = str(data['fecha_nacimiento']).strip()
+        birth_info = parse_birthdate(fn_raw)
+        member['fecha_nacimiento'] = birth_info['formatted'] if birth_info else fn_raw
+        if birth_info:
+            sync_member_birthday(member, birth_info)
+    elif member.get('fecha_nacimiento'):
+        birth_info = parse_birthdate(member.get('fecha_nacimiento'))
+        if birth_info:
+            sync_member_birthday(member, birth_info)
+
     cat = member.get('categoria', 'Hermano')
     member['sheet_name'] = 'Visitas' if cat == 'Visita' else ('Amigos' if cat == 'Amigo' else 'Miembros')
     save_db(db)
@@ -1593,6 +1730,9 @@ def api_members_new():
                 pass
     new_id = f"{prefix}{max_n + 1:03d}"
     
+    fecha_nac = str(data.get('fecha_nacimiento', '')).strip()
+    birth_info = parse_birthdate(fecha_nac)
+
     new_m = {
         'id': new_id,
         'nombre': nombre,
@@ -1602,6 +1742,7 @@ def api_members_new():
         'telefono': telefono,
         'fecha_registro': fecha_reg,
         'hora_registro': hora_reg,
+        'fecha_nacimiento': birth_info['formatted'] if birth_info else fecha_nac,
         'estado': 'Activo',
         'sheet_name': 'Visitas' if categoria == 'Visita' else ('Amigos' if categoria == 'Amigo' else 'Miembros'),
         'total_asistencias': 1 if (marcar_asistencia and culto) else 0
@@ -1609,6 +1750,8 @@ def api_members_new():
     db['miembros'].append(new_m)
     save_db(db)
     sync_sheets_write_member(new_m)
+    if birth_info:
+        sync_member_birthday(new_m, birth_info)
     
     if marcar_asistencia and culto:
         now = now_local()
