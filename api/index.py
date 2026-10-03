@@ -1586,7 +1586,7 @@ def api_attendance_mark():
     n = sum(1 for a in culto_asist if a.get('categoria') == 'Niño')
     am = sum(1 for a in culto_asist if a.get('categoria') == 'Amigo')
     vi = sum(1 for a in culto_asist if a.get('categoria') == 'Visita')
-    tr = db['metricas_cultos'][key].get('transmision_online', 0)
+    tr = to_int(db['metricas_cultos'][key].get('transmision_online', 0))
     db['metricas_cultos'][key].update({
         'presenciales': len(culto_asist),
         'hermanos': h,
@@ -1631,7 +1631,7 @@ def api_attendance_unmark():
         n = sum(1 for a in culto_asist if a.get('categoria') == 'Niño')
         am = sum(1 for a in culto_asist if a.get('categoria') == 'Amigo')
         vi = sum(1 for a in culto_asist if a.get('categoria') == 'Visita')
-        tr = db['metricas_cultos'][key].get('transmision_online', 0)
+        tr = to_int(db['metricas_cultos'][key].get('transmision_online', 0))
         db['metricas_cultos'][key].update({
             'presenciales': len(culto_asist),
             'hermanos': h,
@@ -1780,7 +1780,7 @@ def api_members_new():
         n = sum(1 for a in culto_asist if a.get('categoria') == 'Niño')
         am = sum(1 for a in culto_asist if a.get('categoria') == 'Amigo')
         vi = sum(1 for a in culto_asist if a.get('categoria') == 'Visita')
-        tr = db['metricas_cultos'][key].get('transmision_online', 0)
+        tr = to_int(db['metricas_cultos'][key].get('transmision_online', 0))
         db['metricas_cultos'][key].update({
             'presenciales': len(culto_asist),
             'hermanos': h,

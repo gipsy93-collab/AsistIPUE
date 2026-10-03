@@ -3556,14 +3556,9 @@
             };
 
             if (isMobile) {
-                // 1) Intenta abrir la app de WhatsApp instalada.
-                open(appScheme);
-                // 2) Si la app no está instalada (la página sigue visible), usa wa.me.
-                setTimeout(() => {
-                    if (document.visibilityState === 'visible') {
-                        window.location.href = webUrl;
-                    }
-                }, 1200);
+                // En móvil a veces intentar ambos falla o rompe el enlace
+                // wa.me funciona universalmente y detecta la app en Android/iOS moderno.
+                open(webUrl, '_self');
             } else {
                 // Escritorio: WhatsApp Web / app de escritorio.
                 open(webUrl, '_blank');
